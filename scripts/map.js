@@ -102,7 +102,8 @@ document.querySelectorAll('.mt-btn').forEach(b=>{
     if(!map){ toast('演示模式：地图未加载'); return; }
     if(t === 'zoomIn'){ map.zoomIn(); return; }
     if(t === 'zoomOut'){ map.zoomOut(); return; }
-    if(t === 'layer'){ toast('图层管理面板（演示）'); return; }
+    // 矢量数据入口由 map-layer.js 独立管理。
+    if(t === 'layer') return;
     // 再次点击当前激活的绘制按钮 → 退出绘制
     if(drawMode === t){ enterDraw(null); return; }
     enterDraw(t);

@@ -227,7 +227,7 @@
           </div>
           <div class="map-search"><span class="ic">🔍</span><input placeholder="搜索地点、地块编号、坐标…" /></div>
           <div class="map-toolbar">
-            <div class="mt-btn" data-tool="layer" title="图层管理">🗂️</div>
+            <div class="mt-btn vector-loader disabled" data-tool="layer" title="请先选择工作空间" aria-disabled="true"><span class="mt-vector-icon">🗂️</span><span class="mt-vector-label">加载矢量数据</span></div>
             <div class="mt-sep"></div>
             <div class="mt-btn" data-tool="point" title="点标注">📍</div>
             <div class="mt-btn" data-tool="line" title="线编辑">〰️</div>
@@ -239,6 +239,10 @@
             <div class="mt-sep"></div>
             <div class="mt-btn" data-tool="select" title="圈选范围让AI修改">⭕</div>
           </div>
+          <aside class="vector-layer-panel" id="vectorLayerPanel" aria-label="矢量图层列表">
+            <div class="vlp-head"><span>图层列表</span><span class="vlp-count" id="vectorLayerCount">0</span></div>
+            <div class="vlp-list" id="vectorLayerList"></div>
+          </aside>
           <div class="map-badge" id="mapBadge">地图模式：演示兜底（未配置高德 Key）</div>
         </div>
         <!-- 右侧拖拽分割条 -->
@@ -949,6 +953,29 @@
   </div>
 </div>
 
+<!-- 选择 GIS 工作空间弹窗 -->
+<div class="gis-modal-mask" id="workspaceFolderMask">
+  <div class="gis-modal" role="dialog" aria-modal="true" aria-labelledby="workspaceFolderTitle">
+    <div class="gis-modal-head"><h3 id="workspaceFolderTitle">选择本地文件夹</h3><button class="gis-modal-close" id="workspaceFolderClose" title="关闭">✕</button></div>
+    <div class="gis-modal-body">
+      <p class="gis-modal-desc">选择 GIS 项目目录后，将自动扫描其中的矢量数据文件。</p>
+      <label class="gis-path-field"><span>文件夹路径</span><input id="workspacePathInput" value="E:/GIS/project/" readonly /></label>
+      <div class="gis-folder-preview"><span>📁</span><div><b>project</b><small>模拟本地 GIS 工作空间</small></div></div>
+    </div>
+    <div class="gis-modal-foot"><button class="gis-btn ghost" id="workspaceFolderCancel">取消</button><button class="gis-btn primary" id="workspaceFolderConfirm">选择此文件夹</button></div>
+  </div>
+</div>
+
+<!-- 选择矢量数据弹窗 -->
+<div class="gis-modal-mask" id="vectorSelectMask">
+  <div class="gis-modal vector-select-modal" role="dialog" aria-modal="true" aria-labelledby="vectorSelectTitle">
+    <div class="gis-modal-head"><div><h3 id="vectorSelectTitle">选择矢量数据</h3><p id="vectorWorkspacePath"></p></div><button class="gis-modal-close" id="vectorSelectClose" title="关闭">✕</button></div>
+    <div class="vector-select-head"><span>选择</span><span>文件名</span><span>数据类型</span></div>
+    <div class="vector-select-list" id="vectorSelectList"></div>
+    <div class="gis-modal-foot"><span class="vector-selected-count">已选择 <b id="vectorSelectedCount">0</b> 个图层</span><button class="gis-btn ghost" id="vectorSelectCancel">取消</button><button class="gis-btn primary" id="vectorLoadConfirm">加载到地图</button></div>
+  </div>
+</div>
+
 <script src="scripts/core.js"></script>
 <script src="scripts/tools.js"></script>
 <script src="scripts/knowledge.js"></script>
@@ -957,6 +984,8 @@
 <script src="scripts/workspace.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="scripts/map.js"></script>
+<script src="scripts/gis-workspace.js"></script>
+<script src="scripts/map-layer.js"></script>
 <script src="scripts/chat.js"></script>
 <script src="scripts/agents.js"></script>
 <script src="scripts/bootstrap.js"></script>
