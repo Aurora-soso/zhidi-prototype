@@ -1,0 +1,105 @@
+  /* ============ 登录视图 ============ */
+  #login{position:fixed;inset:0;display:none;z-index:50;transition:.3s;}
+  .login-left{
+    flex:1;position:relative;overflow:hidden;
+    background:linear-gradient(150deg,#0EA5E9 0%,#10B981 100%);
+    display:flex;flex-direction:column;justify-content:center;padding:6% 7%;color:#fff;
+  }
+  .login-left .glow{position:absolute;border-radius:50%;filter:blur(60px);opacity:.5;}
+  .login-left .g1{width:340px;height:340px;background:#67E8F9;top:-80px;right:-60px;}
+  .login-left .g2{width:280px;height:280px;background:#34D399;bottom:-90px;left:-40px;}
+  /* 左侧品牌 Logo */
+  .login-left .brand-row{
+    display:flex;align-items:center;gap:12px;margin-bottom:48px;position:relative;z-index:2;
+  }
+  .login-left .brand-icon{
+    width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.18);backdrop-filter:blur(8px);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;
+  }
+  .login-left .brand-name{font-size:18px;font-weight:700;color:#fff;letter-spacing:.5px;}
+
+  /* 左侧大标题 */
+  .login-left .pitch{max-width:480px;margin-bottom:40px;position:relative;z-index:2;}
+  .login-left .pitch h2{font-size:32px;line-height:1.4;font-weight:700;color:#fff;}
+  .login-left .pitch p{margin-top:14px;color:rgba(255,255,255,.9);line-height:1.8;font-size:15px;}
+
+  /* 左侧特性卡片（毛玻璃白） */
+  .feat-cards{display:flex;flex-direction:column;gap:14px;max-width:520px;position:relative;z-index:2;}
+  .feat-card{
+    display:flex;align-items:flex-start;gap:16px;
+    padding:18px 20px;background:rgba(255,255,255,.14);border-radius:14px;
+    border:1px solid rgba(255,255,255,.25);transition:.18s;cursor:default;backdrop-filter:blur(6px);
+  }
+  .feat-card:hover{background:rgba(255,255,255,.24);}
+  .feat-card .fc-icon{
+    width:44px;height:44px;border-radius:11px;
+    display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;
+  }
+  .feat-card .fc-icon.blue{background:#3B82F6;color:#fff;}
+  .feat-card .fc-icon.green{background:#10B981;color:#fff;}
+  .feat-card .fc-icon.purple{background:#8B5CF6;color:#fff;}
+  .feat-card .fc-text h4{font-size:15px;font-weight:600;margin-bottom:4px;color:#fff;}
+  .feat-card .fc-text p{font-size:13px;color:rgba(255,255,255,.85);line-height:1.6;}
+
+  .login-right{
+    flex:1;background:rgba(255,255,255,.6);backdrop-filter:blur(20px);
+    display:flex;align-items:center;justify-content:center;padding:40px;
+  }
+  .login-card{
+    width:400px;max-width:90%;background:#fff;border-radius:16px;
+    padding:36px 32px;box-shadow:0 8px 32px rgba(30,41,59,.08);
+  }
+  .login-card h3{font-size:24px;font-weight:700;margin-bottom:4px;color:#0F172A;}
+  .login-card .sub{color:var(--t-body);font-size:13px;margin-bottom:24px;}
+  .tabs{display:flex;gap:0;margin-bottom:24px;border-bottom:2px solid #F1F5F9;}
+  .tabs button{
+    flex:1;border:none;background:transparent;padding:10px 0;border-radius:0;
+    cursor:pointer;color:var(--t-body);font-size:14px;font-family:inherit;
+    position:relative;transition:.15s;
+  }
+  .tabs button.active{color:var(--sub);font-weight:600;}
+  .tabs button.active::after{
+    content:'';position:absolute;bottom:-2px;left:0;right:0;height:2px;
+    background:var(--sub);border-radius:1px;
+  }
+  .field{margin-bottom:18px;}
+  #form-phone{display:none;}
+  .field label{display:block;font-size:13px;color:var(--t-body);margin-bottom:6px;font-weight:500;}
+  .field input{width:100%;padding:12px 14px;border:1px solid #E2E8F0;border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:.15s;background:#fff;}
+  .field input:focus{border-color:var(--sub);box-shadow:0 0 0 3px rgba(59,130,246,.12);}
+  .field.code{display:flex;gap:10px;}
+  .field.code input{flex:1;}
+  .field.code button{white-space:nowrap;padding:0 16px;border:1px solid var(--sub);color:var(--sub);background:#fff;border-radius:10px;cursor:pointer;font-size:13px;font-family:inherit;}
+  .field.code button:disabled{color:var(--t-ph);border-color:#E2E8F0;cursor:not-allowed;}
+
+  /* 记住我 + 忘记密码 */
+  .login-options{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+  .agree{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--t-body);margin-bottom:0;}
+  .agree input{width:15px;height:15px;accent-color:var(--sub);}
+  .agree a{color:var(--link);text-decoration:none;}
+  .forgot{font-size:13px;color:var(--link);text-decoration:none;cursor:pointer;}
+  .forgot:hover{text-decoration:underline;}
+
+  /* 登录按钮 */
+  .login-card .btn-main{
+    width:100%;padding:13px;font-size:15px;font-weight:600;
+    background:var(--sub);border-radius:10px;
+  }
+  .login-card .btn-main:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(59,130,246,.35);}
+  .err-tip{color:var(--err);font-size:12px;margin-top:6px;min-height:14px;}
+
+  /* 第三方登录 */
+  .third-party{margin-top:24px;}
+  .tp-divider{display:flex;align-items:center;gap:12px;color:var(--t-ph);font-size:12px;margin-bottom:16px;}
+  .tp-divider::before,.tp-divider::after{content:'';flex:1;height:1px;background:#E2E8F0;}
+  .tp-btn{
+    width:100%;padding:11px;border:1px solid #E2E8F0;border-radius:10px;
+    background:#fff;display:flex;align-items:center;justify-content:center;gap:9px;
+    font-size:14px;color:var(--t-title);cursor:pointer;font-family:inherit;
+    transition:.15s;margin-bottom:10px;
+  }
+  .tp-btn:hover{border-color:#CBD5E1;background:#F8FAFC;}
+  .tp-btn .tp-ic{font-size:17px;width:20px;text-align:center;}
+  .tp-register{text-align:center;margin-top:18px;font-size:13px;color:var(--t-body);}
+  .tp-register a{color:var(--sub);text-decoration:none;font-weight:600;cursor:pointer;}
+

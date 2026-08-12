@@ -1,0 +1,99 @@
+  /* 会话面板专用：新建对话按钮 */
+  .sb-new-chat-btn{
+    margin:10px 14px;padding:10px;border-radius:10px;background:var(--main);color:#fff;
+    border:none;font-size:14px;font-family:inherit;cursor:pointer;font-weight:500;
+    display:flex;align-items:center;justify-content:center;gap:6px;transition:.15s;
+  }
+  .sb-new-chat-btn:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 4px 14px rgba(16,185,129,.3);}
+
+  /* 会话时间分组 */
+  .sess-group{padding:0 14px;}
+  .sess-group-title{font-size:12px;font-weight:600;color:var(--t-body);padding:12px 0 6px;}
+  .sess-item{
+    padding:8px 12px;border-radius:8px;font-size:13.5px;color:var(--t-title);
+    cursor:pointer;transition:.08s;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .sess-item:hover{background:rgba(255,255,255,.7);}
+
+  /* 底部用户栏 */
+  .sb-user-bar{
+    flex-shrink:0;border-top:1px solid rgba(100,116,139,.10);
+    padding:10px 14px;display:flex;align-items:center;gap:10px;
+  }
+  .sidebar.collapsed .sb-user-bar{display:none !important;}
+  .sb-user-bar{position:relative;}
+  .sb-user-bar .u-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FCD34D,#FB923C);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;flex-shrink:0;cursor:pointer;border:2px solid transparent;transition:.15s;}
+  .sb-user-bar .u-avatar:hover{border-color:var(--main);transform:scale(1.05);}
+  .sb-user-bar .u-name{font-size:13px;color:var(--t-title);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;padding-left:4px;}
+  .sb-user-bar .u-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t-body);font-size:15px;transition:.1s;}
+  .sb-user-bar .u-icon:hover{background:rgba(255,255,255,.7);color:var(--main);}
+
+  /* ============ 用户下拉卡片 ============ */
+  .user-dropdown{
+    position:absolute;bottom:100%;left:0;right:0;margin-bottom:8px;
+    background:#fff;border-radius:14px;border:1px solid rgba(100,116,139,.14);
+    box-shadow:0 12px 40px rgba(0,0,0,.12),0 4px 12px rgba(0,0,0,.06);
+    padding:6px;z-index:60;display:none;min-width:260px;
+    animation:udIn .18s ease;
+  }
+  @keyframes udIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+  .user-dropdown.show{display:block;}
+
+  /* 卡片头部：头像+名称 */
+  .ud-head{
+    display:flex;align-items:center;gap:10px;padding:12px 14px 10px;
+    border-bottom:1px solid rgba(100,116,139,.08);
+  }
+  .ud-head .ud-avatar{
+    width:38px;height:38px;border-radius:50%;
+    background:linear-gradient(135deg,#FCD34D,#FB923C);
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:16px;font-weight:700;flex-shrink:0;
+  }
+  .ud-head .ud-info{flex:1;min-width:0;}
+  .ud-head .ud-name{font-size:14px;font-weight:600;color:var(--t-title);}
+  .ud-head .ud-email{font-size:11px;color:var(--t-ph);}
+  .ud-head .ud-bell{
+    width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;color:var(--t-body);font-size:14px;transition:.1s;background:transparent;border:none;
+  }
+  .ud-head .ud-bell:hover{background:#F1F5F9;color:var(--err);}
+
+  /* 版本信息行 */
+  .ud-version{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 14px;font-size:13px;
+  }
+  .ud-version .dv-left{display:flex;align-items:center;gap:7px;color:var(--t-body);}
+  .ud-version .dv-left .dv-ic{font-size:15px;}
+  .ud-version .dv-upgrade{
+    padding:3px 11px;border-radius:6px;font-size:11px;font-family:inherit;
+    cursor:pointer;background:var(--main);color:#fff;border:none;font-weight:500;
+  }
+  .ud-version .dv-upgrade:hover{background:#059669;}
+
+  /* 菜单分隔线 */
+  .ud-sep{height:1px;background:rgba(100,116,139,.08);margin:4px 10px;}
+
+  /* 菜单行 */
+  .ud-row{
+    display:flex;align-items:center;gap:10px;padding:9px 14px;
+    cursor:pointer;font-size:13px;color:var(--t-title);transition:.08s;
+    border-radius:8px;margin:0 4px;
+  }
+  .ud-row:hover{background:rgba(16,185,129,.06);color:var(--main);}
+  .ud-row .dr-ic{width:22px;text-align:center;font-size:15px;flex-shrink:0;}
+  .ud-row .dr-label{flex:1;}
+  /* 外观右侧切换 */
+  .ud-row .dr-toggle{display:flex;gap:4px;}
+  .ud-row .dr-opt{
+    padding:2px 10px;border-radius:6px;font-size:11px;font-family:inherit;
+    cursor:pointer;border:1px solid #E2E8F0;background:#fff;color:var(--t-body);transition:.1s;
+  }
+  .ud-row .dr-opt.active{background:var(--t-title);color:#fff;border-color:var(--t-title);}
+  .ud-row .dr-opt:hover:not(.active){border-color:var(--t-body);}
+
+  /* 退出登录（红色强调） */
+  .ud-row.danger:hover{background:rgba(239,68,68,.06);color:var(--err);}
+  .ud-row.danger .dr-ic{color:var(--err);}
+

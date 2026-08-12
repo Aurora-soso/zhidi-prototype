@@ -1,0 +1,87 @@
+  /* ============ 工作台 ============ */
+  #workbench{position:fixed;inset:0;display:flex;flex-direction:column;}
+  .topbar{height:52px;flex:0 0 52px;background:var(--glass);backdrop-filter:blur(12px);border-bottom:1px solid rgba(100,116,139,.12);display:flex;align-items:center;padding:0 16px;gap:16px;z-index:30;}
+  .topbar .brand2{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--t-title);}
+  .topbar .brand2 .logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--sub),var(--main));display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;}
+  .topbar .crumb{color:var(--t-body);font-size:13px;}
+  .topbar .crumb b{color:var(--t-title);}
+  .topbar .spacer{flex:1;}
+  .topbar .user{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t-body);}
+  .topbar .avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#FCD34D,#FB923C);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;}
+
+  .body{flex:1;display:flex;position:relative;overflow:hidden;}
+
+  /* ========== 左侧侧边栏（默认展开，可收缩） ========== */
+  .sidebar{
+    flex:0 0 260px;
+    background:var(--glass);
+    backdrop-filter:blur(14px);
+    border-right:1px solid rgba(100,116,139,.12);
+    display:flex;
+    flex-direction:column;
+    z-index:20;
+    transition:flex-basis .28s cubic-bezier(.4,0,.2,1), min-width .28s;
+    overflow:hidden;
+    position:relative;
+    min-width:260px;
+  }
+  /* 收缩态 */
+  .sidebar.collapsed{flex-basis:56px;min-width:56px;}
+  /* 收缩时隐藏拖拽条 */
+  .sidebar.collapsed + .resize-handle{display:none;}
+
+  /* --- 导航区 --- */
+  .sb-nav{padding:10px 8px;display:flex;flex-direction:column;gap:2px;flex-shrink:0;position:relative;}
+  .sb-nav-item{
+    display:flex;align-items:center;gap:11px;padding:9px 14px;border-radius:10px;
+    cursor:pointer;font-size:14px;color:var(--t-body);transition:.15s;
+    border:1px solid transparent;white-space:nowrap;
+  }
+  .sb-nav-item .ic{font-size:19px;width:24px;text-align:center;flex-shrink:0;}
+  .sb-nav-item:hover{background:rgba(255,255,255,.7);color:var(--main);}
+  .sb-nav-item.active{background:#fff;color:var(--main);border-color:rgba(16,185,129,.25);box-shadow:var(--shadow);font-weight:600;}
+  /* 收缩态只显图标 */
+  .sidebar.collapsed .sb-nav-item{justify-content:center;padding:10px 0;}
+  .sidebar.collapsed .sb-nav-item .ic{width:auto;}
+  .sidebar.collapsed .sb-nav-item .lbl{display:none;}
+
+  /* 导航区右侧收缩按钮（圆角矩形面板图标，放在导航区底部，不与导航项重叠） */
+  .sb-collapse-arrow{
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    color:var(--t-body);font-size:14px;z-index:5;
+    transition:.15s;background:transparent;border:none;font-family:inherit;
+    padding:8px 14px;border-radius:8px;margin-top:4px;
+  }
+  .sb-collapse-arrow:hover{background:rgba(255,255,255,.7);color:var(--main);}
+  .sb-collapse-arrow svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+  .sidebar.collapsed .sb-collapse-arrow svg{transform:rotate(180deg);}
+
+  /* 拖拽分割条 */
+  .resize-handle{
+    flex:0 0 5px;cursor:col-resize;z-index:25;
+    position:relative;transition:background .12s;
+  }
+  .resize-handle::after{
+    content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:3px;height:28px;border-radius:2px;background:var(--t-ph);opacity:.4;
+    transition:opacity .12s;
+  }
+  .resize-handle:hover::after,.resize-handle.dragging::after{opacity:.9;background:var(--hl);}
+  .resize-handle:hover,.resize-handle.dragging{background:rgba(6,182,212,.08);}
+
+  /* --- 会话记录（常驻侧栏下方，只展示会话） --- */
+  .sb-sessions{flex:1;display:flex;flex-direction:column;overflow:hidden;border-top:1px solid rgba(100,116,139,.10);min-height:0;}
+  .sidebar.collapsed .sb-sessions{display:none;}
+  .sb-sessions-scroll{overflow-y:auto;flex:1;padding-top:4px;}
+
+  /* 主内容区：可切换页面 */
+  .main-view{flex:1;position:relative;overflow:hidden;display:flex;}
+  .page{position:absolute;inset:0;display:none;}
+  .page.active{display:flex;flex-direction:row;}
+  .subpage{padding:28px 32px;overflow-y:auto;width:100%;flex:1;height:100%;}
+  .subpage h2{font-size:20px;color:var(--t-title);margin-bottom:4px;}
+  .subpage .desc{color:var(--t-body);font-size:13px;margin-bottom:22px;}
+  .subpage .tool-grid{grid-template-columns:repeat(4,1fr);}
+  .subpage .kb-cards{flex-direction:row;flex-wrap:wrap;gap:14px;}
+  .subpage .kb-card{width:200px;}
+

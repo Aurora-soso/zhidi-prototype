@@ -1,0 +1,65 @@
+/* ===== 快捷指令填充（两级递进：分类列表 → 子任务） ===== */
+.quick-commands{
+  padding:10px 14px 6px;
+  background:var(--glass);
+  border-top:1px solid rgba(100,116,139,.12);
+}
+/* 默认视图：仅展示分类列表 */
+.qc-cats{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+}
+.qc-cat{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;
+  padding:6px 12px;border-radius:10px;white-space:nowrap;
+  border:1px solid rgba(100,116,139,.20);background:#fff;color:var(--t-title);
+  transition:.15s;
+}
+.qc-cat:hover{border-color:var(--main);color:var(--main);box-shadow:0 2px 8px rgba(16,185,129,.15);transform:translateY(-1px);}
+
+/* 展开视图：某分类下的子任务（进入时带轻微展开动效） */
+.qc-sub-wrap{animation:qcExpand .18s ease;}
+@keyframes qcExpand{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
+.qc-sub-head{
+  display:flex;align-items:center;gap:10px;margin-bottom:9px;
+}
+.qc-back{
+  display:inline-flex;align-items:center;gap:3px;
+  font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;
+  padding:4px 10px;border-radius:8px;white-space:nowrap;
+  border:1px solid rgba(100,116,139,.20);background:rgba(255,255,255,.8);color:var(--t-body);
+  transition:.15s;
+}
+.qc-back:hover{border-color:var(--hl);color:var(--hl);background:rgba(6,182,212,.08);}
+.qc-subtasks{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+}
+.qc-sub{
+  font-family:inherit;font-size:12.5px;
+  padding:5px 12px;border-radius:16px;cursor:pointer;white-space:nowrap;
+  border:1px solid rgba(100,116,139,.22);background:#fff;
+  color:var(--t-title);transition:.15s;
+}
+.qc-sub:hover{border-color:var(--hl);color:var(--hl);box-shadow:0 2px 8px rgba(6,182,212,.14);}
+.qc-sub.active{border-color:var(--hl);background:rgba(6,182,212,.10);color:var(--hl);font-weight:600;}
+
+/* 输入框内 Tag 徽标：固定置于 box 左上角，视觉与正文明显区分 */
+.chat-input .box{position:relative;}
+.chat-input .box.has-tag{padding-top:40px;}
+.qc-tag{
+  position:absolute;top:9px;left:12px;z-index:2;
+  display:inline-flex;align-items:center;gap:6px;
+  background:linear-gradient(135deg,rgba(6,182,212,.16),rgba(16,185,129,.16));
+  border:1px solid rgba(6,182,212,.4);
+  border-radius:8px;padding:3px 4px 3px 9px;
+  font-size:12px;font-weight:600;color:#0E7490;
+  box-shadow:0 1px 4px rgba(6,182,212,.18);
+}
+.qc-tag-name{line-height:1;white-space:nowrap;}
+.qc-tag-x{
+  width:16px;height:16px;border-radius:5px;border:none;cursor:pointer;
+  background:rgba(255,255,255,.7);color:#0E7490;
+  font-size:10px;line-height:1;display:flex;align-items:center;justify-content:center;
+  transition:.12s;
+}
+.qc-tag-x:hover{background:var(--err);color:#fff;}

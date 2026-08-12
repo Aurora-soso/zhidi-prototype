@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>致地AI客户端 · 原型参考</title>
+<!-- 高德地图 JS API v2.0（占位 Key，交付前替换为你的真实 Key） -->
+<script src="https://webapi.amap.com/maps?v=2.0&key=YOUR_AMAP_KEY&plugin=AMap.MouseTool,AMap.RangingTool"></script>
+<link rel="stylesheet" href="styles/main.css" />
+</head>
+<body>
+
+<!-- ========== 登录视图 ========== -->
+<div id="login">
+  <!-- 左侧品牌区 -->
+  <div class="login-left">
+    <div class="glow g1"></div><div class="glow g2"></div>
+    <div class="brand-row">
+      <div class="brand-icon">🗺️</div>
+      <span class="brand-name">致地AI</span>
+    </div>
+    <div class="pitch">
+      <h2>让AI成为你的<br/>科研与工程智能伙伴</h2>
+      <p>连接AI模型、专业工具与知识体系，打造智能化工作流。</p>
+    </div>
+    <div class="feat-cards">
+      <div class="feat-card">
+        <div class="fc-icon blue">🤖</div>
+        <div class="fc-text">
+          <h4>AI智能助手</h4>
+          <p>多模态大模型对话，理解自然语言指令，智能完成复杂的空间分析任务</p>
+        </div>
+      </div>
+      <div class="feat-card">
+        <div class="fc-icon green">⚡</div>
+        <div class="fc-text">
+          <h4>MCP工具中心</h4>
+          <p>可视化工作流编排，拖拽式构建AI处理流水线，支持自定义扩展</p>
+        </div>
+      </div>
+      <div class="feat-card">
+        <div class="fc-icon purple">📚</div>
+        <div class="fc-text">
+          <h4>知识库</h4>
+          <p>专业领域知识沉淀，海量数据资产，行业模型库，为科研提供坚实支撑</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右侧登录卡 -->
+  <div class="login-right">
+    <div class="login-card">
+      <h3>欢迎回来</h3>
+      <div class="sub">登录以继续使用致地AI</div>
+
+      <!-- Tab 切换：账号登录 / 手机登录 -->
+      <div class="tabs">
+        <button class="active" data-tab="pwd">账号登录</button>
+        <button data-tab="phone">手机登录</button>
+      </div>
+
+      <!-- 账号密码表单（默认显示） -->
+      <div id="form-pwd">
+        <div class="field">
+          <label>邮箱 / 用户名</label>
+          <input id="acc2" placeholder="请输入邮箱或用户名" />
+        </div>
+        <div class="field">
+          <label>密码</label>
+          <input id="pwd" type="password" placeholder="请输入密码" />
+        </div>
+        <div class="err-tip" id="err-pwd"></div>
+      </div>
+
+      <!-- 手机验证码表单（默认隐藏） -->
+      <div id="form-phone">
+        <div class="field">
+          <label>手机号</label>
+          <input id="phone" placeholder="请输入手机号" />
+        </div>
+        <div class="field code">
+          <input id="code" placeholder="请输入验证码" />
+          <button id="getCode">获取验证码</button>
+        </div>
+        <div class="err-tip" id="err-code"></div>
+      </div>
+
+      <!-- 记住我 + 忘记密码 -->
+      <div class="login-options">
+        <label class="agree"><input type="checkbox" id="agree" checked /> 记住我</label>
+        <a class="forgot">忘记密码？</a>
+      </div>
+
+      <!-- 登录按钮 -->
+      <button class="btn-main" id="loginBtn">登 录</button>
+
+      <!-- 第三方登录 -->
+      <div class="third-party">
+        <div class="tp-divider">其他登录方式</div>
+        <button class="tp-btn"><span class="tp-ic">💬</span> 微信登录</button>
+        <button class="tp-btn"><span class="tp-ic">🏢</span> 企业账号登录</button>
+        <button class="tp-btn"><span class="tp-ic">🐙</span> GitHub登录</button>
+      </div>
+
+      <!-- 注册入口 -->
+      <div class="tp-register">还没有账号？<a href="#">立即注册</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 工作台 ========== -->
+<div id="workbench">
+  <div class="topbar">
+    <div class="brand2"><div class="logo">🗺️</div>致地AI</div>
+    <div class="spacer"></div>
+  </div>
+  <div class="body">
+    <!-- 左侧侧边栏（默认展开） -->
+    <div class="sidebar" id="sidebar">
+      <!-- 导航列表 + 收缩按钮 -->
+      <div class="sb-nav" id="sbNav">
+        <div class="sb-nav-item" data-page="workbench"><span class="ic">🏠</span><span class="lbl">工作台</span></div>
+        <div class="sb-nav-item" data-page="agent"><span class="ic">🤖</span><span class="lbl">智能体</span></div>
+        <div class="sb-nav-item" data-page="tools"><span class="ic">🧰</span><span class="lbl">原子工具</span></div>
+        <div class="sb-nav-item" data-page="res"><span class="ic">📚</span><span class="lbl">官方资源库</span></div>
+        <!-- 收缩按钮：放在导航底部，不与导航项重叠 -->
+        <button class="sb-collapse-arrow" id="sbToggle" title="收缩侧栏">
+          <svg viewBox="0 0 24 24"><rect x="4" y="3" width="14" height="18" rx="2.5"/><line x1="20" y1="7" x2="16" y2="7"/><line x1="20" y1="12" x2="17" y2="12"/><line x1="20" y1="17" x2="15" y2="17"/></svg>
+        </button>
+      </div>
+
+      <!-- 会话记录：常驻侧栏下方，只展示会话 -->
+      <div class="sb-sessions">
+        <button class="sb-new-chat-btn" id="sbNewChatBtn">＋ 新建对话</button>
+        <div class="sb-sessions-scroll">
+          <div class="sess-group"><div class="sess-group-title">今天</div>
+            <div class="sess-item">全国人口分布分析</div>
+            <div class="sess-item">长三角土地利用变化</div>
+            <div class="sess-item">京津冀产业聚集区识别</div>
+          </div>
+          <div class="sess-group"><div class="sess-group-title">昨天</div>
+            <div class="sess-item">水资源承载力评估</div>
+            <div class="sess-item">城市热岛效应监测</div>
+          </div>
+          <div class="sess-group"><div class="sess-group-title">7天内</div>
+            <div class="sess-item">耕地非农化排查</div>
+            <div class="sess-item">自然保护区生态监测</div>
+            <div class="sess-item">林地覆盖度变化</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 底部用户栏 -->
+      <div class="sb-user-bar" id="sbUserBar">
+        <div class="u-avatar" id="userAvatarBtn" title="用户菜单">椰</div>
+        <div class="u-name" id="userNameBtn">张工</div>
+        <div class="u-icon" id="notifBtn" title="通知中心">🔔</div>
+        <div class="u-icon" id="settingsBtn" title="系统设置">⚙️</div>
+
+        <!-- 用户下拉卡片 -->
+        <div class="user-dropdown" id="userDropdown">
+          <!-- 头部 -->
+          <div class="ud-head">
+            <div class="ud-avatar">椰</div>
+            <div class="ud-info">
+              <div class="ud-name">张工</div>
+              <div class="ud-email">user@example.com</div>
+            </div>
+            <button class="ud-bell" data-action="open-notifications" title="通知中心">🔔</button>
+          </div>
+
+          <!-- 版本 -->
+          <div class="ud-version">
+            <div class="dv-left"><span class="dv-ic">👤</span>体验版</div>
+            <button class="dv-upgrade" data-action="upgrade-plan">升级</button>
+          </div>
+
+          <div class="ud-sep"></div>
+
+          <!-- 设置 -->
+          <div class="ud-row" data-action="open-settings">
+            <span class="dr-ic">⚙️</span><span class="dr-label">设置</span>
+          </div>
+
+          <!-- 外观 -->
+          <div class="ud-row" data-action="appearance-menu">
+            <span class="dr-ic">🎨</span><span class="dr-label">外观</span>
+            <div class="dr-toggle">
+              <button class="dr-opt active" data-theme-choice="light">浅色</button>
+              <button class="dr-opt" data-theme-choice="dark">深色</button>
+            </div>
+          </div>
+
+          <!-- 帮助与反馈 -->
+          <div class="ud-row" data-action="help-feedback">
+            <span class="dr-ic">💬</span><span class="dr-label">帮助与反馈</span>
+          </div>
+
+          <!-- 检查更新 -->
+          <div class="ud-row" data-action="check-updates">
+            <span class="dr-ic">🔄</span><span class="dr-label">检查更新</span>
+          </div>
+
+          <div class="ud-sep"></div>
+
+          <!-- 退出登录 -->
+          <div class="ud-row danger" data-action="logout">
+            <span class="dr-ic">🚪</span><span class="dr-label">退出登录</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- 左侧拖拽分割条 -->
+    <div class="resize-handle" id="resizeLeft" data-target="sidebar"></div>
+
+    <!-- 主内容区：可切换页面 -->
+    <div class="main-view" id="mainView">
+      <!-- 工作台页（地图 + 对话） -->
+      <div class="page active" id="page-workbench">
+        <div class="center">
+          <div id="map"></div>
+          <div class="map-fallback" id="mapFallback">
+            <div class="mk map-point-a"></div><div class="lbl map-point-a">规划地块 A</div>
+            <div class="mk map-point-b"></div><div class="lbl map-point-b">生态红线区</div>
+            <div class="mk map-point-c"></div><div class="lbl map-point-c">待开发用地</div>
+          </div>
+          <div class="map-search"><span class="ic">🔍</span><input placeholder="搜索地点、地块编号、坐标…" /></div>
+          <div class="map-toolbar">
+            <div class="mt-btn" data-tool="layer" title="图层管理">🗂️</div>
+            <div class="mt-sep"></div>
+            <div class="mt-btn" data-tool="point" title="点标注">📍</div>
+            <div class="mt-btn" data-tool="line" title="线编辑">〰️</div>
+            <div class="mt-btn" data-tool="polygon" title="面编辑">⬡</div>
+            <div class="mt-btn" data-tool="measure" title="测量">📐</div>
+            <div class="mt-sep"></div>
+            <div class="mt-btn" data-tool="zoomIn" title="放大">➕</div>
+            <div class="mt-btn" data-tool="zoomOut" title="缩小">➖</div>
+            <div class="mt-sep"></div>
+            <div class="mt-btn" data-tool="select" title="圈选范围让AI修改">⭕</div>
+          </div>
+          <div class="map-badge" id="mapBadge">地图模式：演示兜底（未配置高德 Key）</div>
+          <!-- 任务进度抽屉 -->
+          <div class="task-drawer collapsed" id="taskDrawer">
+            <div class="td-bar" id="taskDrawerToggle">
+              <div class="td-bar-left">
+                <span class="td-ic">📋</span>
+                <span class="td-title">任务中心</span>
+                <span class="td-count" id="tdCount">3 进行中</span>
+              </div>
+              <div class="td-bar-actions">
+                <button class="td-refresh" id="taskDrawerRefresh">刷新</button>
+                <span class="td-arrow">▲</span>
+              </div>
+            </div>
+            <div class="td-body" id="tdBody">
+              <!-- JS 动态渲染 -->
+            </div>
+          </div>
+        </div>
+        <!-- 右侧拖拽分割条 -->
+        <div class="resize-handle" id="resizeRight" data-target="rightPanel"></div>
+
+        <div class="right-panel" id="rightPanel">
+          <div class="chat-head">
+            <div class="collapse-btn" id="collapseChat" title="收起">⟨</div>
+            <div class="chat-head-right">
+              <button class="ch-icon" id="chNew" title="新建对话">＋</button>
+              <button class="ch-icon" id="chFullscreen" title="全屏">⛶</button>
+            </div>
+          </div>
+          <div class="chat-body" id="chatBody">
+            <div class="bubble ai">
+              <div class="av">🤖</div>
+              <div class="txt">你好，我是致地AI 助手。我可以帮你进行空间分析、制图、数据查询与报告生成。</div>
+            </div>
+            <div class="quick">
+              <div class="q">生成专题图</div>
+              <div class="q">查询生态红线</div>
+              <div class="q">统计分析报告</div>
+            </div>
+          </div>
+          <!-- 快捷指令填充：两级递进（分类列表 → 子任务） -->
+          <div class="quick-commands" id="quickCommands">
+            <div class="qc-cats" id="qcCats"></div>
+            <div class="qc-sub-wrap" id="qcSub" style="display:none;">
+              <div class="qc-sub-head" id="qcSubHead"></div>
+              <div class="qc-subtasks" id="qcSubtasks"></div>
+            </div>
+          </div>
+          <!-- 智能体信息栏：独立区域 -->
+          <div class="agent-info-bar" id="agentInfoBar">
+            <button class="aib-switch" id="aibSwitchBtn" title="切换智能体">
+              <span class="aib-avatar" id="aibAvatar">🤖</span>
+              <span class="aib-name" id="aibNameText">致地AI助手</span>
+            </button>
+            <button class="aib-edit" id="aibEditBtn" title="编辑当前智能体">⚙</button>
+            <div class="aib-spacer"></div>
+          </div>
+          <div class="chat-input" id="chatInput">
+            <div class="box">
+              <div class="qc-tag" id="qcTag" style="display:none;"><span class="qc-tag-name"></span><button class="qc-tag-x" id="qcTagX" type="button" title="移除快捷指令">✕</button></div>
+              <textarea id="chatText" placeholder="今天帮你做些什么？@ 引用对话文件，/ 调用技能与指令"></textarea>
+              <div class="bar">
+                <button class="ci-plus" id="ciPlusBtn" title="更多选项">＋</button>
+                <div class="ci-spacer"></div>
+                <button class="ci-btn" id="stopBtn" title="终止生成">⏹</button>
+                <div class="ci-model" id="ciModel"><span class="cm-dot"></span>Hy3<span class="cm-arrow">▾</span></div>
+                <button class="ci-btn" title="语音输入">🎤</button>
+                <button class="ci-send" id="sendBtn" title="发送">▲</button>
+              </div>
+            </div>
+            <!-- 独立栏：工作空间 / 默认权限 -->
+            <div class="ci-extra">
+              <div class="ci-perm" id="ciWorkspace"><span class="cp-check">🗂️</span>工作空间</div>
+              <div class="ci-perm" id="ciPerm"><span class="cp-check">☑</span>默认权限<span class="cp-arrow">▾</span></div>
+            </div>
+            <!-- + 弹出菜单 -->
+            <div class="ci-menu-mask" id="ciMenuMask"></div>
+            <div class="ci-menu" id="ciMenu">
+              <div class="ci-menu-item" data-menu-action="add-file"><div class="cmi-left"><span class="cmi-ic">📎</span>添加文件</div><span class="cmi-arrow">›</span></div>
+              <div class="ci-menu-item" data-menu-action="reference-file"><div class="cmi-left"><span class="cmi-ic">@</span>引用对话中的文件</div><span class="cmi-arrow">›</span></div>
+              <div class="ci-menu-item" data-menu-action="switch-mode"><div class="cmi-left"><span class="cmi-ic">✏️</span>模式</div><span class="cmi-arrow">›</span></div>
+              <div class="ci-menu-item" data-menu-action="open-agent"><div class="cmi-left"><span class="cmi-ic">👤</span>专家</div><span class="cmi-arrow">›</span></div>
+              <div class="ci-menu-item" data-menu-action="open-skills"><div class="cmi-left"><span class="cmi-ic">🔧</span>技能</div><span class="cmi-arrow">›</span></div>
+              <div class="ci-menu-item" data-menu-action="open-connectors"><div class="cmi-left"><span class="cmi-ic">🔗</span>连接器</div><span class="cmi-arrow">›</span></div>
+              <div class="ci-menu-foot">
+                <div class="cmf-close" id="ciMenuClose">✕</div>
+                <div class="ci-perm"><span class="cp-check">☑</span>默认权限<span class="cp-arrow">▾</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="reopen" id="reopenTab"><div class="collapse-btn reopen-chat-button" id="reopenChat" title="展开对话">⟩</div></div>
+      </div>
+
+      <!-- 工具中心页 -->
+      <div class="page" id="page-tools">
+        <div class="tools-page">
+          <!-- 右侧内容区 -->
+          <div class="tools-content">
+            <!-- 顶栏：面包屑 + 操作按钮 -->
+            <div class="tools-topbar">
+              <div class="tools-title">
+                <h2>原子工具中心</h2>
+                <p>提供专业地理空间分析工具，包含AI智能翻译、空间分析、数据处理等能力</p>
+              </div>
+              <div class="tools-top-actions">
+                <button class="btn-sm primary" id="btnUploadAtom"><span>↑</span> 上传原子工具</button>
+                <button class="btn-sm" id="btnManageAtom"><span>⚙</span> 管理原子工具</button>
+              </div>
+            </div>
+
+            <!-- 主体：搜索 + 筛选 + 分组卡片 -->
+            <div class="tools-main" id="toolsMain">
+
+              <!-- 搜索框 + 业务类型 / 工具类型组合筛选 -->
+              <div class="tools-filter-bar">
+                <div class="tf-search">
+                  <span class="tf-sic">🔍</span>
+                  <input id="toolSearchInput" placeholder="搜索工具名称、功能…" />
+                </div>
+                <div class="tf-filter-panel">
+                  <div class="tf-filter-row">
+                    <span class="tf-filter-label">业务类型</span>
+                    <div class="tf-tags" id="toolBusinessFilters">
+                      <button class="tf-tag active" data-business="all">全部</button>
+                      <button class="tf-tag" data-business="spatial">空间分析</button>
+                      <button class="tf-tag" data-business="data">数据处理</button>
+                      <button class="tf-tag" data-business="remote">遥感影像</button>
+                      <button class="tf-tag" data-business="visualization">可视化工具</button>
+                    </div>
+                  </div>
+                  <div class="tf-filter-row">
+                    <span class="tf-filter-label">工具类型</span>
+                    <div class="tf-tags" id="toolTypeFilters">
+                      <button class="tf-tag active" data-type="all">全部</button>
+                      <button class="tf-tag" data-type="mcp">MCP</button>
+                      <button class="tf-tag" data-type="skill">Skill</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 工具分组列表（JS 动态渲染） -->
+              <div id="toolGroupsContainer"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 智能体页 -->
+      <!-- 智能体中心页 -->
+      <div class="page" id="page-agent">
+        <div class="agent-page">
+          <div class="agent-head">
+            <div>
+              <h2>智能体中心</h2>
+              <div class="desc">管理你的专属智能体，或发现广场中的公共智能体</div>
+            </div>
+            <button class="ac-btn primary" id="newAgentBtn">＋ 新建智能体</button>
+          </div>
+
+          <div class="agent-tabs">
+            <button class="agent-tab active" data-mod="mine">我的智能体</button>
+            <button class="agent-tab" data-mod="square">智能体广场</button>
+          </div>
+
+          <!-- 我的智能体 -->
+          <div class="agent-mod show" id="modMine">
+            <div class="agent-toolbar">
+              <div class="agent-search"><span class="sic">🔍</span><input id="mineSearch" placeholder="搜索我的智能体…" /></div>
+              <div class="sp"></div>
+            </div>
+            <div class="agent-grid" id="mineGrid"></div>
+          </div>
+
+          <!-- 智能体广场 -->
+          <div class="agent-mod" id="modSquare">
+            <div class="agent-toolbar">
+              <div class="agent-search"><span class="sic">🔍</span><input id="squareSearch" placeholder="搜索广场智能体…" /></div>
+              <div class="agent-tags" id="squareTags"></div>
+            </div>
+            <div class="agent-grid" id="squareGrid"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 智能体编辑页 -->
+      <div class="page" id="page-agent-edit">
+        <div class="aee-page">
+          <div class="aee-header">
+            <button class="aee-back" id="aeeBackBtn" title="返回工作台">
+              <span class="aee-back-ic">←</span>
+              <span>返回</span>
+            </button>
+            <div class="aee-title-row">
+              <span class="aee-title-ic">⚙️</span>
+              <h2>编辑智能体</h2>
+            </div>
+            <div class="aee-actions">
+              <button class="aee-btn ghost" id="aeeCancelBtn">取消</button>
+              <button class="aee-btn primary" id="aeeSaveBtn">保存</button>
+            </div>
+          </div>
+
+          <div class="aee-body" id="aeeBody">
+            <!-- 基本信息 -->
+            <div class="aee-card">
+              <div class="aee-card-head">
+                <span class="aee-card-ic">📋</span>
+                <h3>基本信息</h3>
+              </div>
+              <div class="aee-form">
+                <div class="aee-field">
+                  <label>名称</label>
+                  <input id="aeeName" placeholder="智能体名称" />
+                </div>
+                <div class="aee-field aee-field-sm">
+                  <label>图标 Emoji</label>
+                  <input id="aeeIcon" placeholder="🤖" />
+                </div>
+                <div class="aee-field aee-field-sm">
+                  <label>分类</label>
+                  <select id="aeeCat"></select>
+                </div>
+                <div class="aee-field">
+                  <label>描述</label>
+                  <textarea id="aeeDesc" rows="3" placeholder="描述该智能体的能力范围与使用场景"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- 子智能体 -->
+            <div class="aee-card">
+              <div class="aee-card-head">
+                <span class="aee-card-ic">🧩</span>
+                <h3>子智能体</h3>
+                <span class="aee-count" id="aeeSubCount">0</span>
+                <div class="aee-card-actions">
+                  <button class="aee-btn primary" id="aeeAddSubBtn">＋ 添加子智能体</button>
+                </div>
+              </div>
+              <div class="aee-list" id="aeeSubList"></div>
+              <div class="aee-empty" id="aeeSubEmpty">暂无子智能体，点击右上角添加。</div>
+            </div>
+
+            <!-- 原子工具 -->
+            <div class="aee-card">
+              <div class="aee-card-head">
+                <span class="aee-card-ic">🛠️</span>
+                <h3>原子工具</h3>
+                <span class="aee-count" id="aeeToolCount">0</span>
+                <div class="aee-card-actions">
+                  <button class="aee-btn primary" id="aeeAddToolBtn">＋ 添加原子工具</button>
+                </div>
+              </div>
+              <div class="aee-tools" id="aeeToolList"></div>
+              <div class="aee-empty" id="aeeToolEmpty">暂无原子工具，点击右上角添加并配置参数。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 大模型配置页 -->
+      <div class="page" id="page-model-config">
+        <div class="aee-page">
+          <div class="aee-header">
+            <button class="aee-back" id="mcBackBtn" title="返回工作台">
+              <span class="aee-back-ic">←</span>
+              <span>返回</span>
+            </button>
+            <div class="aee-title-row">
+              <span class="aee-title-ic">🧠</span>
+              <h2>配置大模型</h2>
+            </div>
+            <div class="aee-actions">
+              <button class="aee-btn ghost" id="mcCancelBtn">取消</button>
+              <button class="aee-btn primary" id="mcSaveBtn">保存</button>
+            </div>
+          </div>
+
+          <div class="aee-body" id="mcBody">
+            <div class="aee-card">
+              <div class="aee-card-head">
+                <span class="aee-card-ic">🧠</span>
+                <h3>模型信息</h3>
+              </div>
+              <div class="aee-form">
+                <div class="aee-field">
+                  <label>模型名称</label>
+                  <input id="mcName" placeholder="例如：我的私有模型" />
+                </div>
+                <div class="aee-field aee-field-sm">
+                  <label>供应商 / 类型</label>
+                  <select id="mcProvider">
+                    <option value="自建">自建 / 私有部署</option>
+                    <option value="OpenAI">OpenAI 兼容</option>
+                    <option value="通义">通义千问</option>
+                    <option value="智谱">智谱 GLM</option>
+                    <option value="Anthropic">Anthropic</option>
+                    <option value="Google">Google</option>
+                    <option value="其他">其他</option>
+                  </select>
+                </div>
+                <div class="aee-field">
+                  <label>API 地址</label>
+                  <input id="mcEndpoint" placeholder="https://api.example.com/v1" />
+                </div>
+                <div class="aee-field">
+                  <label>API Key</label>
+                  <input id="mcKey" type="password" placeholder="sk-..." />
+                </div>
+                <div class="aee-field">
+                  <label>简要描述</label>
+                  <textarea id="mcDesc" rows="3" placeholder="描述该模型的用途或特点"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 知识库管理页 -->
+      <div class="page" id="page-res">
+        <!-- ====== 主视图：分类浏览 ====== -->
+        <div class="kb-page" id="kbHome">
+          <div class="kb-main">
+            <div class="kb-header">
+              <h2 class="kb-title">官方知识库</h2>
+              <div class="kb-search-row">
+                <div class="kb-search-wrap">
+                  <span class="ks-icon">🔍</span>
+                  <input id="kbSearchInput" placeholder="请输入关键字" />
+                </div>
+                <button class="kb-adv-btn" id="kbAdvancedSearch">高级搜索</button>
+              </div>
+              <div class="kb-hot">
+                <div class="kb-hot-label">🔥 热门搜索</div>
+                <div class="kb-tags" id="kbHotTags"></div>
+              </div>
+            </div>
+            <div class="kb-grid" id="kbGrid"></div>
+          </div>
+          <!-- 右侧更新通知 -->
+          <div class="kb-sidebar-right">
+            <div class="kbr-head"><span class="dot"></span>知识库更新通知（近一个月）</div>
+            <div class="kbr-search">
+              <input placeholder="请输入关键字" />
+              <button>搜索</button>
+            </div>
+            <div class="kbr-list" id="kbNoticeList"></div>
+          </div>
+        </div>
+
+        <!-- ====== 详情视图：分类内知识库列表 ====== -->
+        <div class="kbd-page" id="kbDetail">
+          <div class="kbd-breadcrumb" id="kbBreadcrumb">
+            <a id="kbHomeLink">知识库管理</a><span class="sep">›</span><span class="curr" id="kbCurrCat">法律法规</span>
+          </div>
+          <div class="kbd-toolbar">
+            <button class="kbd-new-btn" id="kbNewButton"><span class="plus">＋</span> 新建知识库</button>
+            <div class="kbd-actions">
+              <button class="kbd-action-btn active" data-ft="all">全部</button>
+              <button class="kbd-action-btn" data-ft="recent">最近更新</button>
+              <button class="kbd-action-btn" data-ft="most">文件最多</button>
+            </div>
+          </div>
+          <div class="kbd-filter">
+            <div class="kf-icon"><input id="kbdSearchInput" placeholder="检索知识库名称…" /></div>
+          </div>
+          <div class="kbd-grid" id="kbdGrid"></div>
+          <div class="kb-pagination" id="kbPagination"></div>
+        </div>
+      </div>
+
+      <!-- 系统设置页 -->
+      <div class="page" id="page-settings">
+        <div class="settings-page">
+          <div class="settings-sidebar">
+            <div class="ss-group">
+              <div class="ss-group-title">通用</div>
+              <div class="ss-item active"><span class="si-ic">👤</span>账号与安全</div>
+              <div class="ss-item"><span class="si-ic">🎨</span>外观设置</div>
+              <div class="ss-item"><span class="si-ic">🌐</span>语言与地区</div>
+              <div class="ss-item"><span class="si-ic">🔔</span>通知设置</div>
+            </div>
+            <div class="ss-group">
+              <div class="ss-group-title">功能</div>
+              <div class="ss-item"><span class="si-ic">🗺️</span>地图配置</div>
+              <div class="ss-item"><span class="si-ic">🤖</span>模型管理</div>
+              <div class="ss-item"><span class="si-ic">📚</span>知识库配置</div>
+              <div class="ss-item"><span class="si-ic">🧰</span>工具中心</div>
+            </div>
+            <div class="ss-group">
+              <div class="ss-group-title">其他</div>
+              <div class="ss-item"><span class="si-ic">💾</span>数据存储</div>
+              <div class="ss-item"><span class="si-ic">⌨️</span>快捷键</div>
+              <div class="ss-item"><span class="si-ic">ℹ️</span>关于致地AI</div>
+            </div>
+          </div>
+          <div class="settings-main">
+            <h2>账号与安全</h2>
+            <div class="sdesc">管理你的账户信息、登录方式与安全选项</div>
+
+            <div class="setting-section">
+              <h3>📱 账户信息</h3>
+              <div class="setting-card">
+                <div class="setting-row">
+                  <div><div class="sr-label">头像</div><div class="sr-desc">点击更换头像</div></div>
+                  <div class="sr-right"><div class="settings-avatar-preview">椰</div></div>
+                </div>
+                <div class="setting-row">
+                  <div><div class="sr-label">用户名</div><div class="sr-desc">用户名称</div></div>
+                  <div class="sr-right"><button class="kbd-action-btn">修改</button></div>
+                </div>
+                <div class="setting-row">
+                  <div><div class="sr-label">绑定手机</div><div class="sr-desc">138****8888</div></div>
+                  <div class="sr-right"><button class="kbd-action-btn">换绑</button></div>
+                </div>
+                <div class="setting-row">
+                  <div><div class="sr-label">绑定邮箱</div><div class="sr-desc">user@example.com</div></div>
+                  <div class="sr-right"><button class="kbd-action-btn">换绑</button></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="setting-section">
+              <h3>🔐 安全设置</h3>
+              <div class="setting-card">
+                <div class="setting-row">
+                  <div><div class="sr-label">登录密码</div><div class="sr-desc">上次修改：2026-01-15</div></div>
+                  <div class="sr-right"><button class="kbd-action-btn">修改密码</button></div>
+                </div>
+                <div class="setting-row">
+                  <div><div class="sr-label">两步验证</div><div class="sr-desc">增强账户安全性</div></div>
+                  <div class="sr-right"><div class="toggle-switch" id="twoFactorToggle"></div></div>
+                </div>
+                <div class="setting-row">
+                  <div><div class="sr-label">登录设备管理</div><div class="sr-desc">当前在线设备：2 台</div></div>
+                  <div class="sr-right"><button class="kbd-action-btn">查看</button></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="setting-section">
+              <h3>🌍 区域与语言</h3>
+              <div class="setting-card">
+                <div class="setting-row">
+                  <div><div class="sr-label">界面语言</div></div>
+                  <div class="sr-right"><select class="settings-select"><option>简体中文</option><option>English</option></select></div>
+                </div>
+                <div class="setting-row">
+                  <div><div class="sr-label">时区</div></div>
+                  <div class="sr-right"><select class="settings-select"><option>UTC+8 北京时间</option></select></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 通知页 -->
+      <div class="page" id="page-notif">
+        <div class="notif-page">
+          <div class="notif-toolbar">
+            <div class="nf-tabs">
+              <button class="nf-tab active">全部</button>
+              <button class="nf-tab">未读</button>
+              <button class="nf-tab">@我的</button>
+              <button class="nf-tab">系统</button>
+            </div>
+            <div class="nf-actions">
+              <button id="markAllReadButton">全部已读</button>
+            </div>
+          </div>
+          <div class="nf-list" id="notifList"></div>
+        </div>
+      </div>
+      <!-- 原子工具详情页 -->
+      <div class="page" id="page-tool-detail">
+        <div class="td-page">
+          <div class="td-topbar">
+            <button class="td-back" id="tdBack">← 返回工具库</button>
+          </div>
+          <div class="td-card">
+            <div class="td-head">
+              <div class="td-icon" id="tdIcon"></div>
+              <div class="td-head-text">
+                <h3 id="tdName"></h3>
+                <div class="td-head-sub" id="tdHeadSub"></div>
+              </div>
+              <button class="td-close" id="tdClose" title="关闭">✕</button>
+            </div>
+            <div class="td-body">
+              <section class="td-sec">
+                <h4><span class="td-sec-ic">📌</span>基本信息</h4>
+                <p class="td-intro" id="tdIntro"></p>
+              </section>
+              <section class="td-sec">
+                <h4><span class="td-sec-ic">🧩</span>功能说明</h4>
+                <ul class="td-funcs" id="tdFuncs"></ul>
+              </section>
+              <section class="td-sec">
+                <h4><span class="td-sec-ic">🏷️</span>类型标签</h4>
+                <div id="tdTypeBadge"></div>
+              </section>
+              <section class="td-sec">
+                <h4><span class="td-sec-ic">🔁</span>输入输出定义</h4>
+                <div class="td-io">
+                  <div class="td-io-col">
+                    <div class="td-io-title">输入参数</div>
+                    <div id="tdInputs"></div>
+                  </div>
+                  <div class="td-io-col">
+                    <div class="td-io-title">输出结果</div>
+                    <div id="tdOutputs"></div>
+                  </div>
+                </div>
+              </section>
+              <section class="td-sec">
+                <h4><span class="td-sec-ic">⚙️</span>配置状态</h4>
+                <div class="td-status" id="tdStatus"></div>
+              </section>
+            </div>
+            <div class="td-foot">
+              <button class="td-btn ghost" id="tdAddBtn"></button>
+              <button class="td-btn primary" id="tdCallBtn">在主页面对话中调用</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 通用模态框（智能体详情 / 编辑） -->
+<div class="modal-mask" id="modalMask">
+  <div class="modal" id="modalBox"></div>
+</div>
+
+<!-- 切换智能体浮层（Popover：依附 aib-switch 按钮，左上侧弹出） -->
+<div class="switch-mask" id="asMask">
+  <div class="switch-pop" id="asPop">
+    <div class="sp-arrow"></div>
+    <div class="sp-head">
+      <h3>切换智能体</h3>
+      <button class="sp-close" id="asClose" title="关闭">✕</button>
+    </div>
+    <div class="sp-tabs">
+      <button class="sp-tab active" data-mod="mine">我的智能体</button>
+      <button class="sp-tab" data-mod="square">智能体广场</button>
+    </div>
+    <div class="sp-body">
+      <div class="sp-panel show" data-mod="mine">
+        <div class="sp-list" id="asListMine"></div>
+        <div class="sw-foot" id="asFootMine"><span class="sw-hint">下拉加载更多</span></div>
+      </div>
+      <div class="sp-panel" data-mod="square">
+        <div class="sp-list" id="asListSquare"></div>
+        <div class="sw-foot" id="asFootSquare"><span class="sw-hint">下拉加载更多</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 大模型选择弹窗 -->
+<div class="model-mask" id="modelMask">
+  <div class="model-pop" id="modelPop">
+    <div class="model-head">
+      <h3>选择大模型</h3>
+      <button class="model-close" id="modelClose" title="关闭">✕</button>
+    </div>
+    <div class="model-body">
+      <!-- 模块一：官方内置大模型 -->
+      <div class="model-section">
+        <div class="model-sec-head">
+          <span class="ms-title">官方内置大模型</span>
+          <label class="auto-switch" title="开启后自动选择最优模型">
+            <span class="auto-label">Auto模式</span>
+            <input type="checkbox" id="modelAuto" />
+            <span class="auto-track"><span class="auto-thumb"></span></span>
+          </label>
+        </div>
+        <div class="model-list" id="modelOfficialList"></div>
+      </div>
+      <!-- 模块二：用户自定义大模型 -->
+      <div class="model-section">
+        <div class="model-sec-head"><span class="ms-title">我的模型</span></div>
+        <div class="model-list" id="modelCustomList"></div>
+        <div class="model-empty" id="modelCustomEmpty" style="display:none;">暂无自定义模型，点击下方按钮配置</div>
+      </div>
+      <!-- 模块三：配置入口 -->
+      <div class="model-foot">
+        <button class="model-config-btn" id="modelConfigBtn">＋ 添加自定义模型</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 上传原子工具弹窗 -->
+<div class="upload-mask" id="uploadMask">
+  <div class="upload-pop" id="uploadPop">
+    <div class="up-head">
+      <h3>上传原子工具</h3>
+      <button class="up-close" id="uploadClose" title="关闭">✕</button>
+    </div>
+    <div class="up-tabs">
+      <button class="up-tab active" data-tab="skill">上传 Skill</button>
+      <button class="up-tab" data-tab="mcp">上传 MCP</button>
+    </div>
+
+    <!-- 上传 Skill Tab -->
+    <div class="up-panel show" id="upPanelSkill">
+      <div class="up-skill-desc">
+        <p>• 包含根级 SKILL.md 的 .zip / .skill 文件</p>
+        <p>• 或本地 Skill 脚本（.py / .json / .yaml / .yml）</p>
+        <p>• 上传后自动注册为 Skill 能力包</p>
+      </div>
+      <div class="up-dropzone" id="upDropzone">
+        <div class="up-drop-icon">↑</div>
+        <div class="up-drop-text">拖放或点击上传</div>
+      </div>
+      <div class="up-foot">
+        <button class="up-btn primary" id="upSelectFileBtn">选择文件上传</button>
+        <button class="up-btn ghost" id="upCancelBtn">关闭</button>
+      </div>
+    </div>
+
+    <!-- 上传 MCP Tab -->
+    <div class="up-panel" id="upPanelMcp">
+      <div class="up-mcp-desc">
+        <p>填写 MCP 服务器的配置信息，支持标准 mcp.json 格式。</p>
+      </div>
+      <div class="up-editor-wrap">
+        <textarea class="up-json-editor" id="upMcpJson" spellcheck="false" placeholder='{
+  "mcpServers": {
+    "my-mcp": {
+      "command": "npx",
+      "args": ["@example/mcp-server"]
+    }
+  }
+}'></textarea>
+      </div>
+      <div class="up-foot">
+        <button class="up-btn primary" id="upSaveMcpBtn">保存配置</button>
+        <button class="up-btn ghost" id="upCancelMcpBtn">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 管理原子工具弹窗 -->
+<div class="manage-mask" id="manageMask">
+  <div class="manage-pop" id="managePop">
+    <div class="mg-head">
+      <h3>管理原子工具</h3>
+      <button class="mg-close" id="manageClose" title="关闭">✕</button>
+    </div>
+    <div class="mg-tabs" id="mgTabs">
+      <button class="mg-tab active" data-source="all">全部工具</button>
+      <button class="mg-tab" data-source="square">广场工具</button>
+      <button class="mg-tab" data-source="mine">我的工具</button>
+    </div>
+    <!-- 二级筛选：工具来源由一级 Tab 管理，类型与状态作为工具属性组合筛选 -->
+    <div class="mg-filter-panel">
+      <div class="mg-filter-row">
+        <span class="mg-filter-label">工具类型</span>
+        <div class="mg-filter-options" id="mgTypeFilters">
+          <button class="mg-filter active" data-type="all">全部</button>
+          <button class="mg-filter" data-type="skill">Skill</button>
+          <button class="mg-filter" data-type="mcp">MCP</button>
+        </div>
+      </div>
+      <div class="mg-filter-row">
+        <span class="mg-filter-label">工具状态</span>
+        <div class="mg-filter-options" id="mgStatusFilters">
+          <button class="mg-filter active" data-status="all">全部</button>
+          <button class="mg-filter" data-status="enabled">已启用</button>
+          <button class="mg-filter" data-status="disabled">已停用</button>
+        </div>
+      </div>
+    </div>
+    <div class="mg-toolbar">
+      <div class="mg-search">
+        <span class="mg-sic">🔍</span>
+        <input id="mgSearchInput" placeholder="搜索工具名称、类型或来源…" />
+      </div>
+      <div class="mg-batch">
+        <label class="mg-checkall"><input type="checkbox" id="mgCheckAll" /> 全选</label>
+        <button class="mg-disable-btn" id="mgBatchDisable" disabled>批量禁用 (<span id="mgDisCount">0</span>)</button>
+        <button class="mg-del-btn" id="mgBatchDelete" disabled>批量删除 (<span id="mgSelCount">0</span>)</button>
+      </div>
+    </div>
+    <div class="mg-list-head" aria-hidden="true">
+      <span></span>
+      <span>工具名称</span>
+      <span>工具类型</span>
+      <span>操作</span>
+    </div>
+    <div class="mg-list" id="mgList"></div>
+    <div class="mg-foot">
+      <span class="mg-count">共 <span id="mgTotal">0</span> 个原子工具</span>
+      <button class="mg-btn ghost" id="mgCloseBtn">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- MCP 配置弹窗 -->
+<div class="mcp-config-mask" id="mcpConfigMask">
+  <div class="mcp-config-pop" id="mcpConfigPop">
+    <div class="mcc-head">
+      <h3 id="mccTitle">配置 MCP</h3>
+      <button class="mcc-close" id="mccClose" title="关闭">✕</button>
+    </div>
+    <div class="mcc-body">
+      <textarea id="mccJson" class="mcc-editor" spellcheck="false" placeholder='{\n  "mcpServers": {\n    "example": {\n      "command": "npx",\n      "args": ["-y", "@example/mcp"]\n    }\n  }\n}'></textarea>
+      <div class="mcc-msg" id="mccMsg"></div>
+    </div>
+    <div class="mcc-foot">
+      <button class="mcc-btn" id="mccValidate">校验</button>
+      <button class="mcc-btn primary" id="mccSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<script src="scripts/core.js"></script>
+<script src="scripts/tools.js"></script>
+<script src="scripts/knowledge.js"></script>
+<script src="scripts/account.js"></script>
+<script src="scripts/tasks.js"></script>
+<script src="scripts/workspace.js"></script>
+<script src="scripts/map.js"></script>
+<script src="scripts/chat.js"></script>
+<script src="scripts/agents.js"></script>
+<script src="scripts/bootstrap.js"></script>
+</body>
+</html>
