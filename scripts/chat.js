@@ -385,52 +385,6 @@ function toggleChatFullscreen(){
   }
 }
 
-// ============ 任务进度抽屉 ============
-let drawerTasks=[
-  {id:1,name:'紫金片区拆解_500m*650m',icon:'📐',iconBg:'#DBEAFE',iconColor:'#3B82F6',status:'running',progress:42,time:'更新于 12:04:58'},
-  {id:2,name:'AI规划助手_正射影像_2024',icon:'🤖',iconBg:'#FEF3C7',iconColor:'#D97706',status:'running',progress:68,time:'运行中 · 1.3s'},
-  {id:3,name:'批量导入_清表数据.xlsx',icon:'✅',iconBg:'#D1FAE5',iconColor:'#10B981',status:'done',progress:100,time:'完成 · 耗时 12.4s / 文件 123.4 KB'}
-];
-function renderTaskDrawer(){
-  const body=$('#tdBody');
-  if(!body)return;
-  body.innerHTML=drawerTasks.map(t=>{
-    const pct=t.progress+'%';
-    const color=t.status==='done'?'var(--main)':t.status==='error'?'#EF4444':'var(--sub)';
-    const statusText=t.status==='done'?'已完成':t.status==='running'?'进行中':'等待中';
-    return '<div class="td-item">'+
-      '<div class="td-item-icon" style="background:'+t.iconBg+';color:'+t.iconColor+'">'+t.icon+'</div>'+
-      '<div class="td-item-info">'+
-        '<div class="td-item-name">'+t.name+'</div>'+
-        '<div class="td-item-meta">'+statusText+' · '+t.time+'</div>'+
-      '</div>'+
-      '<div class="td-item-progress"><div class="td-item-progress-fill" style="width:'+pct+';background:'+color+'"></div></div>'+
-      '<span class="td-item-pct" style="color:'+color+'">'+pct+'</span>'+
-    '</div>';
-  }).join('');
-  const running=drawerTasks.filter(t=>t.status==='running').length;
-  const cntEl=document.getElementById('tdCount');
-  if(cntEl) cntEl.textContent=running+' 进行中';
-}
-function toggleTaskDrawer(){
-  const d=$('#taskDrawer');
-  if(!d)return;
-  d.classList.toggle('collapsed');
-  d.classList.toggle('expanded');
-  if(d.classList.contains('expanded'))renderTaskDrawer();
-}
-function refreshTaskDrawer(){
-  drawerTasks.forEach(t=>{
-    if(t.status==='running'&&t.progress<95){
-      t.progress=Math.min(95,t.progress+Math.floor(Math.random()*8));
-    }
-  });
-  renderTaskDrawer();
-  toast('任务进度已刷新');
-}
-renderTaskDrawer();
-$('#taskDrawerToggle').addEventListener('click',toggleTaskDrawer);
-$('#taskDrawerRefresh').addEventListener('click',event=>{ event.stopPropagation(); refreshTaskDrawer(); });
 $('#chFullscreen').addEventListener('click',toggleChatFullscreen);
 $('#ciPlusBtn').addEventListener('click',e=>{ e.stopPropagation(); openCiMenu(); });
 $('#ciMenuClose').addEventListener('click',closeCiMenu);

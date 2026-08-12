@@ -4,8 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>致地AI客户端 · 原型参考</title>
-<!-- 高德地图 JS API v2.0（占位 Key，交付前替换为你的真实 Key） -->
-<script src="https://webapi.amap.com/maps?v=2.0&key=YOUR_AMAP_KEY&plugin=AMap.MouseTool,AMap.RangingTool"></script>
+<!-- 地图：Leaflet + OpenStreetMap（免 key 方案，演示用，后续可替换为高德 JS API） -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <link rel="stylesheet" href="styles/main.css" />
 </head>
 <body>
@@ -240,23 +240,6 @@
             <div class="mt-btn" data-tool="select" title="圈选范围让AI修改">⭕</div>
           </div>
           <div class="map-badge" id="mapBadge">地图模式：演示兜底（未配置高德 Key）</div>
-          <!-- 任务进度抽屉 -->
-          <div class="task-drawer collapsed" id="taskDrawer">
-            <div class="td-bar" id="taskDrawerToggle">
-              <div class="td-bar-left">
-                <span class="td-ic">📋</span>
-                <span class="td-title">任务中心</span>
-                <span class="td-count" id="tdCount">3 进行中</span>
-              </div>
-              <div class="td-bar-actions">
-                <button class="td-refresh" id="taskDrawerRefresh">刷新</button>
-                <span class="td-arrow">▲</span>
-              </div>
-            </div>
-            <div class="td-body" id="tdBody">
-              <!-- JS 动态渲染 -->
-            </div>
-          </div>
         </div>
         <!-- 右侧拖拽分割条 -->
         <div class="resize-handle" id="resizeRight" data-target="rightPanel"></div>
@@ -972,6 +955,7 @@
 <script src="scripts/account.js"></script>
 <script src="scripts/tasks.js"></script>
 <script src="scripts/workspace.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="scripts/map.js"></script>
 <script src="scripts/chat.js"></script>
 <script src="scripts/agents.js"></script>
