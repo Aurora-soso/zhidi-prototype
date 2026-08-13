@@ -76,3 +76,78 @@
   .mbtn.blue{background:var(--sub);color:#fff;border-color:var(--sub);}
   .mbtn.blue:hover{background:#2563EB;}
 
+  /* ===== 我的智能体分组 ===== */
+  .agent-section{margin-top:18px;}
+  .agent-section:first-of-type{margin-top:0;}
+  .agent-section-head{display:flex;align-items:baseline;gap:10px;margin-bottom:12px;padding:0 2px;}
+  .agent-section-head .ash-title{font-size:15px;font-weight:600;color:var(--t-title);}
+  .agent-section-head .ash-count{font-size:12px;color:var(--t-ph);background:#F1F5F9;padding:2px 8px;border-radius:10px;}
+  .agent-empty{padding:24px;text-align:center;color:var(--t-ph);font-size:13px;background:#FAFBFC;border-radius:10px;border:1px dashed #E2E8F0;}
+  .agent-empty a{color:var(--main);cursor:pointer;font-weight:500;}
+  .agent-empty a:hover{text-decoration:underline;}
+
+  /* ===== 智能体卡片收藏角标 ===== */
+  .agent-card{position:relative;}
+  .ac-fav{position:absolute;top:10px;right:12px;font-size:14px;color:#F59E0B;z-index:2;}
+
+  /* ===== 智能体详情页 ===== */
+  .add-page{display:flex;flex-direction:column;height:100%;width:100%;flex:1;overflow:hidden;}
+  .add-header{display:flex;align-items:center;padding:18px 28px 0;flex-shrink:0;}
+  .add-back{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border:1px solid rgba(100,116,139,.2);background:#fff;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;color:var(--t-body);transition:.12s;}
+  .add-back:hover{border-color:var(--main);color:var(--main);}
+  .add-back-ic{font-size:14px;}
+  .add-body{flex:1;overflow-y:auto;padding:18px 28px 32px;display:flex;flex-direction:column;gap:16px;}
+
+  /* 详情卡片通用 */
+  .add-card{background:#fff;border-radius:12px;padding:24px 28px;box-shadow:0 1px 3px rgba(15,23,42,.04),0 0 0 1px rgba(15,23,42,.04);}
+  .add-card-head{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+  .add-card-head .add-card-ic{font-size:16px;}
+  .add-card-head h3{font-size:15px;font-weight:600;color:var(--t-title);margin:0;}
+
+  /* 基础信息卡片 */
+  .add-card-base{padding:24px 28px;}
+  .add-base{display:flex;gap:24px;align-items:flex-start;}
+  .add-base-left{flex-shrink:0;}
+  .add-avatar{width:88px;height:88px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:42px;}
+  .add-base-right{flex:1;min-width:0;}
+  .add-name{font-size:22px;font-weight:600;color:var(--t-title);margin:0 0 8px;}
+  .add-desc{font-size:13px;color:var(--t-body);line-height:1.7;margin:0 0 14px;}
+  .add-meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--t-body);}
+  .add-meta span{display:inline-flex;align-items:baseline;gap:6px;}
+  .add-meta span b{font-weight:500;color:var(--t-title);}
+  .add-meta .dot{color:#CBD5E1;}
+
+  /* 能力说明 */
+  .add-ability-intro{font-size:13px;color:var(--t-body);margin:0 0 12px;line-height:1.7;}
+  .add-ability-list{margin:0;padding-left:20px;color:var(--t-body);font-size:13px;line-height:1.9;}
+  .add-ability-list li::marker{color:var(--main);}
+
+  /* 能力组成 */
+  .add-comp-dl{display:grid;grid-template-columns:80px 1fr;gap:12px 18px;margin:0;font-size:13px;}
+  .add-comp-dl dt{color:var(--t-title);font-weight:500;}
+  .add-comp-dl dd{margin:0;color:var(--t-body);line-height:1.6;}
+
+  /* 使用数量统计 */
+  .add-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  .add-stat{padding:18px 20px;background:#FAFBFC;border-radius:10px;text-align:center;}
+  .add-stat-num{font-size:24px;font-weight:600;color:var(--t-title);line-height:1.2;}
+  .add-stat-label{font-size:12px;color:var(--t-ph);margin-top:6px;}
+
+  /* 评分分布 */
+  .add-rating{display:flex;flex-direction:column;gap:10px;}
+  .add-rating-row{display:grid;grid-template-columns:36px 1fr 48px;gap:12px;align-items:center;font-size:12px;}
+  .add-rating-label{color:var(--t-title);font-weight:500;}
+  .add-rating-bar{height:8px;background:#F1F5F9;border-radius:4px;overflow:hidden;}
+  .add-rating-fill{height:100%;background:#F59E0B;border-radius:4px;transition:width .3s;}
+  .add-rating-pct{color:var(--t-body);text-align:right;font-variant-numeric:tabular-nums;}
+
+  /* 详情底部按钮 */
+  .add-actions{display:flex;justify-content:flex-end;gap:10px;padding:8px 0 0;}
+  .add-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 22px;border-radius:9px;cursor:pointer;font-family:inherit;font-size:13px;border:1px solid transparent;background:var(--main);color:#fff;transition:.12s;}
+  .add-btn:hover{background:#059669;}
+  .add-btn .ai{font-size:11px;}
+  .add-btn.outline{background:#fff;color:var(--main);border-color:var(--main);}
+  .add-btn.outline:hover{background:rgba(16,185,129,.06);}
+  .add-btn.outline.orange{color:#F59E0B;border-color:#F59E0B;}
+  .add-btn.outline.orange:hover{background:rgba(245,158,11,.06);}
+

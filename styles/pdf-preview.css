@@ -1,0 +1,94 @@
+  /* ============ 站内 PDF 预览弹层 ============ */
+  .pdf-mask{
+    position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(3px);
+    z-index:320;display:none;align-items:stretch;justify-content:flex-end;
+  }
+  .pdf-mask.show{display:flex;}
+  .pdf-drawer{
+    width:min(1180px,96vw);height:100%;background:#fff;
+    display:flex;flex-direction:column;
+    box-shadow:-24px 0 60px rgba(15,23,42,.28);
+    animation:pdfDrawerIn .26s ease;
+  }
+  @keyframes pdfDrawerIn{from{transform:translateX(48px);opacity:.55;}to{transform:none;opacity:1;}}
+
+  /* 顶部信息栏 */
+  .pdf-top{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:16px 22px;border-bottom:1px solid rgba(100,116,139,.12);flex-shrink:0;
+  }
+  .pdf-meta{min-width:0;}
+  .pdf-title{font-size:16px;font-weight:700;color:var(--t-title);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .pdf-sub{display:flex;gap:16px;margin-top:5px;font-size:12px;color:var(--t-ph);flex-wrap:wrap;}
+  .pdf-top-actions{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+  .pdf-btn{
+    display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:9px;
+    font-size:13px;font-family:inherit;cursor:pointer;transition:.12s;
+    border:1px solid rgba(100,116,139,.2);background:#fff;color:var(--t-body);
+  }
+  .pdf-btn:hover{border-color:var(--main);color:var(--main);}
+  .pdf-btn.primary{background:var(--main);color:#fff;border-color:var(--main);}
+  .pdf-btn.primary:hover{background:#059669;color:#fff;}
+  .pdf-btn.close{border-color:transparent;background:transparent;color:var(--t-body);}
+  .pdf-btn.close:hover{background:#FEE2E2;color:var(--err);border-color:transparent;}
+
+  /* 工具栏 */
+  .pdf-toolbar{
+    display:flex;align-items:center;gap:6px;padding:10px 22px;
+    border-bottom:1px solid rgba(100,116,139,.10);background:#FBFCFE;flex-shrink:0;
+  }
+  .pdf-tb-btn{
+    width:32px;height:32px;border-radius:8px;border:1px solid #E2E8F0;background:#fff;
+    color:var(--t-body);font-size:15px;cursor:pointer;transition:.12s;font-family:inherit;
+    display:inline-flex;align-items:center;justify-content:center;
+  }
+  .pdf-tb-btn:hover{border-color:var(--main);color:var(--main);}
+  .pdf-pageinfo{font-size:13px;color:var(--t-title);min-width:74px;text-align:center;font-variant-numeric:tabular-nums;}
+  .pdf-zoom{font-size:13px;color:var(--t-title);min-width:52px;text-align:center;font-variant-numeric:tabular-nums;}
+  .pdf-tb-sep{width:1px;height:20px;background:#E2E8F0;margin:0 6px;}
+
+  /* 主体：左缩略图 + 右正文 */
+  .pdf-body{flex:1;display:flex;overflow:hidden;min-height:0;}
+  .pdf-thumbs{
+    width:132px;flex-shrink:0;overflow-y:auto;padding:14px 12px;
+    background:#F8FAFC;border-right:1px solid #E2E8F0;display:flex;flex-direction:column;gap:12px;align-items:center;
+  }
+  .pdf-thumb{
+    border:2px solid #E2E8F0;border-radius:6px;cursor:pointer;background:#fff;
+    max-width:100px;height:auto;transition:.15s;box-shadow:0 1px 3px rgba(15,23,42,.06);
+  }
+  .pdf-thumb:hover{border-color:var(--sub);}
+  .pdf-thumb.active{border-color:var(--main);box-shadow:0 0 0 3px rgba(16,185,129,.18);}
+
+  .pdf-canvas-wrap{
+    flex:1;overflow:auto;position:relative;display:flex;align-items:flex-start;justify-content:center;
+    padding:24px;background:#F1F5F9;
+  }
+  .pdf-canvas-wrap canvas{box-shadow:0 6px 24px rgba(15,23,42,.16);background:#fff;border-radius:2px;}
+
+  /* 加载 / 错误状态 */
+  .pdf-loading{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+    color:var(--t-body);font-size:13px;background:rgba(241,245,249,.85);z-index:5;
+  }
+  .pdf-spin{
+    width:34px;height:34px;border-radius:50%;
+    border:3px solid #E2E8F0;border-top-color:var(--main);
+    animation:pdfSpin .8s linear infinite;
+  }
+  @keyframes pdfSpin{to{transform:rotate(360deg);}}
+  .pdf-error{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+    background:rgba(241,245,249,.92);z-index:5;text-align:center;padding:24px;
+  }
+  .pdf-error .pe-ic{font-size:40px;}
+  .pdf-error .pe-msg{font-size:14px;color:var(--t-body);line-height:1.7;max-width:420px;}
+
+  /* 移动端：全屏预览，隐藏缩略图 */
+  @media (max-width: 768px){
+    .pdf-drawer{width:100vw;max-width:100vw;}
+    .pdf-thumbs{display:none;}
+    .pdf-top{align-items:flex-start;flex-direction:column;gap:10px;}
+    .pdf-top-actions{width:100%;justify-content:flex-end;}
+    .pdf-title{max-width:100%;}
+  }

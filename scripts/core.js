@@ -2,6 +2,26 @@
 const $ = s => document.querySelector(s);
 const toast = (m) => { const t=$('#toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200); };
 
+// 将浮层依附到触发按钮上方或下方，并限制在当前视口内。
+function positionAnchoredPopover(anchor, pop, placement='auto'){
+  if(!anchor || !pop) return;
+  const gap=10, edge=8, anchorRect=anchor.getBoundingClientRect();
+  pop.style.visibility='hidden';
+  const popWidth=pop.offsetWidth, popHeight=pop.offsetHeight;
+  const spaceAbove=anchorRect.top-edge-gap;
+  const spaceBelow=window.innerHeight-anchorRect.bottom-edge-gap;
+  const placeAbove=placement==='above' || (placement==='auto' && spaceAbove>=popHeight && spaceAbove>=spaceBelow);
+  const availableHeight=Math.max(160,placeAbove?spaceAbove:spaceBelow);
+  pop.style.maxHeight=availableHeight+'px';
+  const measuredHeight=Math.min(popHeight,availableHeight);
+  const left=Math.max(edge,Math.min(anchorRect.right-popWidth,window.innerWidth-popWidth-edge));
+  const top=placeAbove?Math.max(edge,anchorRect.top-measuredHeight-gap):Math.min(window.innerHeight-measuredHeight-edge,anchorRect.bottom+gap);
+  pop.style.left=left+'px';pop.style.top=top+'px';
+  pop.style.setProperty('--anchor-x',Math.max(16,Math.min(popWidth-16,anchorRect.left+anchorRect.width/2-left))+'px');
+  pop.classList.toggle('pop-above',placeAbove);pop.classList.toggle('pop-below',!placeAbove);
+  pop.style.visibility='';
+}
+
 // ============ 登录 Tab 切换 ============
 $('.tabs').addEventListener('click', e=>{
   const b=e.target.closest('button'); if(!b) return;
@@ -34,15 +54,20 @@ $('#loginBtn').addEventListener('click', ()=>{
 });
 
 // ============ 左侧导航：切换主页面 ============
-const pages=['workbench','tools','agent','agent-edit','res','settings','notif','tool-detail','model-config'];
+const pages=['workbench','tools','agent','agent-edit','agent-detail','res','settings','notif','tool-detail','model-config'];
 function switchPage(p){
   pages.forEach(x=>$('#page-'+x).classList.toggle('active', x===p));
   document.querySelectorAll('.sb-nav-item').forEach(n=>n.classList.toggle('active', n.dataset.page===p));
   if(p==='workbench' && map){ try{ map.resize(); }catch(e){} }
 }
 function openAgentEditPage(){
-  switchPage('agent-edit');
-  if(typeof renderAgentEdit==='function') renderAgentEdit();
+  // 优先复用新建/编辑表单（四模块），否则仅切换页面
+  if(typeof openAgentForm==='function'){
+    const cur = (typeof currentAgent!=='undefined' && currentAgent) ? currentAgent : null;
+    openAgentForm('edit', cur?cur.id:null, cur);
+  } else {
+    switchPage('agent-edit');
+  }
 }
 document.querySelectorAll('.sb-nav-item').forEach(item=>{
   item.addEventListener('click', ()=>switchPage(item.dataset.page));

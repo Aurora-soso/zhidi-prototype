@@ -153,7 +153,7 @@
 
       <!-- 底部用户栏 -->
       <div class="sb-user-bar" id="sbUserBar">
-        <div class="u-avatar" id="userAvatarBtn" title="用户菜单">椰</div>
+        <div class="u-avatar" id="userAvatarBtn" title="用户菜单">张</div>
         <div class="u-name" id="userNameBtn">张工</div>
         <div class="u-icon" id="notifBtn" title="通知中心">🔔</div>
         <div class="u-icon" id="settingsBtn" title="系统设置">⚙️</div>
@@ -162,7 +162,7 @@
         <div class="user-dropdown" id="userDropdown">
           <!-- 头部 -->
           <div class="ud-head">
-            <div class="ud-avatar">椰</div>
+            <div class="ud-avatar">张</div>
             <div class="ud-info">
               <div class="ud-name">张工</div>
               <div class="ud-email">user@example.com</div>
@@ -287,6 +287,7 @@
           <div class="chat-input" id="chatInput">
             <div class="box">
               <div class="qc-tag" id="qcTag" style="display:none;"><span class="qc-tag-name"></span><button class="qc-tag-x" id="qcTagX" type="button" title="移除快捷指令">✕</button></div>
+              <div class="qc-tag file-ref-tag" id="fileRefTag" style="display:none;"><span class="qc-tag-name"></span><button class="qc-tag-x" type="button" title="移除文件引用">✕</button></div>
               <textarea id="chatText" placeholder="今天帮你做些什么？@ 引用对话文件，/ 调用技能与指令"></textarea>
               <div class="bar">
                 <button class="ci-plus" id="ciPlusBtn" title="更多选项">＋</button>
@@ -389,41 +390,67 @@
           </div>
 
           <div class="agent-tabs">
-            <button class="agent-tab active" data-mod="mine">我的智能体</button>
-            <button class="agent-tab" data-mod="square">智能体广场</button>
-          </div>
-
-          <!-- 我的智能体 -->
-          <div class="agent-mod show" id="modMine">
-            <div class="agent-toolbar">
-              <div class="agent-search"><span class="sic">🔍</span><input id="mineSearch" placeholder="搜索我的智能体…" /></div>
-              <div class="sp"></div>
-            </div>
-            <div class="agent-grid" id="mineGrid"></div>
+            <button class="agent-tab active" data-mod="square">智能体广场</button>
+            <button class="agent-tab" data-mod="mine">我的智能体</button>
           </div>
 
           <!-- 智能体广场 -->
-          <div class="agent-mod" id="modSquare">
+          <div class="agent-mod show" id="modSquare">
             <div class="agent-toolbar">
               <div class="agent-search"><span class="sic">🔍</span><input id="squareSearch" placeholder="搜索广场智能体…" /></div>
               <div class="agent-tags" id="squareTags"></div>
             </div>
             <div class="agent-grid" id="squareGrid"></div>
           </div>
+
+          <!-- 我的智能体 -->
+          <div class="agent-mod" id="modMine">
+            <div class="agent-toolbar">
+              <div class="agent-search"><span class="sic">🔍</span><input id="mineSearch" placeholder="搜索我的智能体…" /></div>
+              <div class="sp"></div>
+            </div>
+            <div class="agent-section">
+              <div class="agent-section-head">
+                <span class="ash-title">我创建的</span>
+                <span class="ash-count" id="myCreatedCount">0</span>
+              </div>
+              <div class="agent-grid" id="mineCreatedGrid"></div>
+            </div>
+            <div class="agent-section">
+              <div class="agent-section-head">
+                <span class="ash-title">我收藏的</span>
+                <span class="ash-count" id="myFavoriteCount">0</span>
+              </div>
+              <div class="agent-grid" id="mineFavoriteGrid"></div>
+              <div class="agent-empty" id="mineFavoriteEmpty" style="display:none;">还没有收藏的智能体，去 <a id="goSquareLink">智能体广场</a> 看看 →</div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- 智能体编辑页 -->
+      <!-- 智能体详情页 -->
+      <div class="page" id="page-agent-detail">
+        <div class="add-page">
+          <div class="add-header">
+            <button class="add-back" id="addBackBtn" title="返回智能体中心">
+              <span class="add-back-ic">←</span><span>返回</span>
+            </button>
+          </div>
+          <div class="add-body" id="addBody"></div>
+        </div>
+      </div>
+
+      <!-- 智能体新建/编辑页 -->
       <div class="page" id="page-agent-edit">
         <div class="aee-page">
           <div class="aee-header">
-            <button class="aee-back" id="aeeBackBtn" title="返回工作台">
+            <button class="aee-back" id="aeeBackBtn" title="返回智能体中心">
               <span class="aee-back-ic">←</span>
               <span>返回</span>
             </button>
             <div class="aee-title-row">
-              <span class="aee-title-ic">⚙️</span>
-              <h2>编辑智能体</h2>
+              <span class="aee-title-ic" id="aeeTitleIcon">🤖</span>
+              <h2 id="aeePageTitle">新建智能体</h2>
             </div>
             <div class="aee-actions">
               <button class="aee-btn ghost" id="aeeCancelBtn">取消</button>
@@ -432,58 +459,122 @@
           </div>
 
           <div class="aee-body" id="aeeBody">
-            <!-- 基本信息 -->
+            <!-- 基础信息 -->
             <div class="aee-card">
               <div class="aee-card-head">
-                <span class="aee-card-ic">📋</span>
-                <h3>基本信息</h3>
+                <span class="aee-card-ic">🎛️</span>
+                <h3>基础信息</h3>
               </div>
-              <div class="aee-form">
-                <div class="aee-field">
-                  <label>名称</label>
-                  <input id="aeeName" placeholder="智能体名称" />
+              <div class="aee-form aee-form-basic">
+                <div class="aee-field aee-avatar-field">
+                  <label>机器人图标</label>
+                  <div class="aee-avatar-upload" id="aeeAvatarUpload">
+                    <div class="aee-avatar-preview" id="aeeAvatarPreview">🤖</div>
+                    <div class="aee-avatar-text">
+                      <div class="aee-avatar-title">点击上传 / 更换图标</div>
+                      <div class="aee-avatar-hint">支持 PNG / JPG / SVG，建议 256×256</div>
+                    </div>
+                  </div>
+                  <input type="file" id="aeeAvatarInput" accept="image/png,image/jpeg,image/svg+xml" style="display:none;">
                 </div>
-                <div class="aee-field aee-field-sm">
-                  <label>图标 Emoji</label>
-                  <input id="aeeIcon" placeholder="🤖" />
+                <div class="aee-field aee-name-field">
+                  <label>机器人名称 <span class="aee-req">*</span></label>
+                  <input id="aeeName" placeholder="请输入智能体名称" maxlength="100" />
+                  <span class="aee-char-count" id="aeeNameCount">0/100</span>
                 </div>
-                <div class="aee-field aee-field-sm">
-                  <label>分类</label>
-                  <select id="aeeCat"></select>
+                <div class="aee-field aee-desc-field">
+                  <label>机器人描述</label>
+                  <textarea id="aeeDesc" rows="3" placeholder="请描述您的智能体的功能，该描述将在智能体发布后固定展示" maxlength="500"></textarea>
+                  <span class="aee-char-count" id="aeeDescCount">0/500</span>
                 </div>
-                <div class="aee-field">
-                  <label>描述</label>
-                  <textarea id="aeeDesc" rows="3" placeholder="描述该智能体的能力范围与使用场景"></textarea>
+                <div class="aee-field aee-tags-field">
+                  <label>标签</label>
+                  <div class="aee-tags-input" id="aeeTagsInput">
+                    <div class="aee-tags-list" id="aeeTagsList"></div>
+                    <input id="aeeTagInput" placeholder="输入标签后回车添加（最多 10 个，每个 ≤16 字符）" maxlength="16" />
+                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- 子智能体 -->
+            <!-- 提示词设置 -->
+            <div class="aee-card">
+              <div class="aee-card-head">
+                <span class="aee-card-ic">✏️</span>
+                <h3>提示词设置</h3>
+              </div>
+              <div class="aee-form aee-form-prompt">
+                <div class="aee-field">
+                  <label>Prompt 模板</label>
+                  <select id="aeePromptTemplate">
+                    <option value="custom">自定义模板</option>
+                    <option value="review">规划审查助手</option>
+                    <option value="analysis">空间分析助手</option>
+                    <option value="report">报告生成助手</option>
+                    <option value="qa">知识问答助手</option>
+                  </select>
+                </div>
+                <div class="aee-field aee-prompt-field">
+                  <label>提示词填入</label>
+                  <div class="aee-prompt-head">
+                    <button class="aee-btn ghost" id="aeeFullscreenPrompt">⛶ 全屏编辑</button>
+                  </div>
+                  <textarea id="aeePrompt" rows="8" placeholder="#能力
+- 通用审查：对规划方案进行多维度合规审查
+
+#逻辑
+- 1. 解析输入方案
+- 2. 对照规范逐项审查
+- 3. 输出审查报告"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- 能力配置 -->
             <div class="aee-card">
               <div class="aee-card-head">
                 <span class="aee-card-ic">🧩</span>
-                <h3>子智能体</h3>
-                <span class="aee-count" id="aeeSubCount">0</span>
-                <div class="aee-card-actions">
-                  <button class="aee-btn primary" id="aeeAddSubBtn">＋ 添加子智能体</button>
+                <h3>能力配置</h3>
+              </div>
+              <div class="aee-form aee-form-cap">
+                <div class="aee-field">
+                  <label>智能体配置</label>
+                  <div class="cap-pick-row">
+                    <div class="cap-pick-tags" id="aeePickedAgents"></div>
+                    <button class="cap-pick-add" id="aeePickAgentsBtn" type="button">＋ 选择智能体</button>
+                  </div>
+                </div>
+                <div class="aee-field">
+                  <label>原子工具</label>
+                  <div class="cap-pick-row">
+                    <div class="cap-pick-tags" id="aeePickedTools"></div>
+                    <button class="cap-pick-add" id="aeePickToolsBtn" type="button">＋ 选择原子工具</button>
+                  </div>
                 </div>
               </div>
-              <div class="aee-list" id="aeeSubList"></div>
-              <div class="aee-empty" id="aeeSubEmpty">暂无子智能体，点击右上角添加。</div>
             </div>
 
-            <!-- 原子工具 -->
+            <!-- 对话设置 -->
             <div class="aee-card">
               <div class="aee-card-head">
-                <span class="aee-card-ic">🛠️</span>
-                <h3>原子工具</h3>
-                <span class="aee-count" id="aeeToolCount">0</span>
-                <div class="aee-card-actions">
-                  <button class="aee-btn primary" id="aeeAddToolBtn">＋ 添加原子工具</button>
+                <span class="aee-card-ic">💬</span>
+                <h3>对话设置</h3>
+              </div>
+              <div class="aee-form aee-form-chat">
+                <div class="aee-field">
+                  <label>开场白</label>
+                  <textarea id="aeeOpening" rows="2" placeholder="请输入开场白文案…"></textarea>
+                </div>
+                <div class="aee-field">
+                  <label>开场示例问题</label>
+                  <div class="aee-examples" id="aeeExamples"></div>
+                  <button class="aee-add-param" id="aeeAddExample" type="button">＋ 添加问题</button>
+                </div>
+                <div class="aee-field">
+                  <label>输入框引导语</label>
+                  <input id="aeeInputPlaceholder" placeholder="请输入引导语" />
                 </div>
               </div>
-              <div class="aee-tools" id="aeeToolList"></div>
-              <div class="aee-empty" id="aeeToolEmpty">暂无原子工具，点击右上角添加并配置参数。</div>
             </div>
           </div>
         </div>
@@ -599,6 +690,41 @@
           <div class="kbd-grid" id="kbdGrid"></div>
           <div class="kb-pagination" id="kbPagination"></div>
         </div>
+        <!-- ====== 文件列表视图：某个知识库内部的文件列表 ====== -->
+        <div class="kb-file-page" id="kbFilePage" style="display:none;">
+          <div class="kbd-breadcrumb" id="kbFileBreadcrumb">
+            <a id="kbFileHomeLink">知识库管理</a><span class="sep">›</span><a id="kbFileCatLink">法律法规</a><span class="sep">›</span><span class="curr" id="kbFileCurrKb">CS</span>
+          </div>
+          <div class="kb-file-toolbar">
+            <div class="kb-file-right">
+              <select class="kbf-select" id="kbFileStatusFilter">
+                <option value="all">筛选解析状态</option>
+                <option value="done">解析完成</option>
+                <option value="pending">解析中</option>
+                <option value="error">解析失败</option>
+              </select>
+              <input class="kbf-input" id="kbFileSearchInput" placeholder="请输入关键字" />
+              <button class="kbf-btn primary" id="kbFileSearchBtn">搜索</button>
+            </div>
+          </div>
+          <div class="kb-file-table-wrap">
+            <table class="kb-file-table">
+              <thead>
+                <tr>
+                  <th class="kbf-col-check"><input type="checkbox" id="kbFileSelectAll" /></th>
+                  <th class="kbf-col-no">序号</th>
+                  <th class="kbf-col-name">文件名称</th>
+                  <th class="kbf-col-scope">使用范围</th>
+                  <th class="kbf-col-pubtime">政策发布时间</th>
+                  <th class="kbf-col-valid">文件有效期</th>
+                  <th class="kbf-col-ops">操作</th>
+                </tr>
+              </thead>
+              <tbody id="kbFileTbody"></tbody>
+            </table>
+          </div>
+          <div class="kb-file-pagination" id="kbFilePagination"></div>
+        </div>
       </div>
 
       <!-- 系统设置页 -->
@@ -635,7 +761,7 @@
               <div class="setting-card">
                 <div class="setting-row">
                   <div><div class="sr-label">头像</div><div class="sr-desc">点击更换头像</div></div>
-                  <div class="sr-right"><div class="settings-avatar-preview">椰</div></div>
+                  <div class="sr-right"><div class="settings-avatar-preview">张</div></div>
                 </div>
                 <div class="setting-row">
                   <div><div class="sr-label">用户名</div><div class="sr-desc">用户名称</div></div>
@@ -827,6 +953,93 @@
   </div>
 </div>
 
+<!-- 选择智能体弹窗（能力配置） -->
+<div class="aee-picker-mask" id="capAgentMask">
+  <div class="aee-picker">
+    <div class="aee-picker-head">
+      <h3>选择智能体</h3>
+      <button class="aee-picker-close" data-close type="button">✕</button>
+    </div>
+    <div class="cap-tabs" id="capAgentTabs">
+      <button class="cap-tab active" data-src="mine" type="button">我的智能体</button>
+      <button class="cap-tab" data-src="square" type="button">广场智能体</button>
+    </div>
+    <div class="aee-picker-search">
+      <span class="cps-ic">🔍</span>
+      <input id="capAgentSearch" placeholder="搜索智能体名称、描述…" />
+    </div>
+    <div class="aee-picker-body" id="capAgentList"></div>
+    <div class="aee-picker-foot">
+      <span class="cap-count" id="capAgentCount">已选 0 项</span>
+      <button class="aee-btn ghost" data-close type="button">取消</button>
+      <button class="aee-btn primary" id="capAgentConfirm" type="button">确认选择</button>
+    </div>
+  </div>
+</div>
+
+<!-- 选择原子工具弹窗（能力配置） -->
+<div class="aee-picker-mask" id="capToolMask">
+  <div class="aee-picker">
+    <div class="aee-picker-head">
+      <h3>选择原子工具</h3>
+      <button class="aee-picker-close" data-close type="button">✕</button>
+    </div>
+    <div class="aee-picker-search">
+      <span class="cps-ic">🔍</span>
+      <input id="capToolSearch" placeholder="搜索工具名称…" />
+    </div>
+    <div class="aee-picker-body" id="capToolList"></div>
+    <div class="aee-picker-foot">
+      <span class="cap-count" id="capToolCount">已选 0 项</span>
+      <button class="aee-btn ghost" data-close type="button">取消</button>
+      <button class="aee-btn primary" id="capToolConfirm" type="button">确认选择</button>
+    </div>
+  </div>
+</div>
+
+<!-- 站内 PDF 预览弹层（官方资源库） -->
+<div class="pdf-mask" id="pdfMask">
+  <div class="pdf-drawer" id="pdfDrawer">
+    <div class="pdf-top">
+      <div class="pdf-meta">
+        <div class="pdf-title" id="pdfTitle">文件名.pdf</div>
+        <div class="pdf-sub" id="pdfSub"></div>
+      </div>
+      <div class="pdf-top-actions">
+        <button class="pdf-btn primary" id="pdfAddChat" type="button">添加到对话</button>
+        <button class="pdf-btn close" id="pdfClose" type="button">✕ 关闭</button>
+      </div>
+    </div>
+    <div class="pdf-toolbar">
+      <button class="pdf-tb-btn" id="pdfPrev" type="button" title="上一页">‹</button>
+      <span class="pdf-pageinfo" id="pdfPageInfo">— / —</span>
+      <button class="pdf-tb-btn" id="pdfNext" type="button" title="下一页">›</button>
+      <span class="pdf-tb-sep"></span>
+      <button class="pdf-tb-btn" id="pdfZoomOut" type="button" title="缩小">−</button>
+      <span class="pdf-zoom" id="pdfZoomLevel">100%</span>
+      <button class="pdf-tb-btn" id="pdfZoomIn" type="button" title="放大">＋</button>
+      <span class="pdf-tb-sep"></span>
+      <button class="pdf-tb-btn" id="pdfRotate" type="button" title="旋转">⟳</button>
+      <button class="pdf-tb-btn" id="pdfFullscreen" type="button" title="全屏">⛶</button>
+    </div>
+    <div class="pdf-body">
+      <div class="pdf-thumbs" id="pdfThumbs"></div>
+      <div class="pdf-canvas-wrap" id="pdfCanvasWrap">
+        <canvas id="pdfCanvas"></canvas>
+        <div class="pdf-loading" id="pdfLoading">
+          <span class="pdf-spin"></span>
+          <span>正在加载文档…</span>
+        </div>
+        <div class="pdf-error" id="pdfError" style="display:none;">
+          <div class="pe-ic">⚠️</div>
+          <div class="pe-msg" id="pdfErrorMsg">加载失败</div>
+          <button class="pdf-btn primary" id="pdfRetry" type="button">重新加载</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- 上传原子工具弹窗 -->
 <div class="upload-mask" id="uploadMask">
   <div class="upload-pop" id="uploadPop">
@@ -979,6 +1192,8 @@
 <script src="scripts/core.js"></script>
 <script src="scripts/tools.js"></script>
 <script src="scripts/knowledge.js"></script>
+<script src="scripts/sample-pdf-data.js"></script>
+<script src="scripts/pdf-preview.js"></script>
 <script src="scripts/account.js"></script>
 <script src="scripts/tasks.js"></script>
 <script src="scripts/workspace.js"></script>
@@ -988,6 +1203,7 @@
 <script src="scripts/map-layer.js"></script>
 <script src="scripts/chat.js"></script>
 <script src="scripts/agents.js"></script>
+<script src="assets/vendor/pdf.min.js"></script>
 <script src="scripts/bootstrap.js"></script>
 </body>
 </html>

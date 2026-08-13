@@ -1,15 +1,15 @@
 /* ============ 大模型选择弹窗 ============ */
-.model-mask{
-  position:fixed; inset:0; background:rgba(15,23,42,.42);
-  z-index:320; display:none; align-items:center; justify-content:center; padding:20px;
-}
-.model-mask.show{ display:flex; }
+.model-mask{position:fixed;inset:0;background:transparent;z-index:320;display:none;padding:0;}
+.model-mask.show{display:block;}
 .model-pop{
-  width:520px; max-width:100%; max-height:84vh;
-  background:#fff; border-radius:16px; overflow:hidden;
+  position:fixed;width:520px;max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);
+  background:#fff; border-radius:16px; overflow:visible;
   box-shadow:0 24px 64px rgba(30,41,59,.30);
   display:flex; flex-direction:column; animation:mpIn .18s ease;
 }
+.model-pop::after,.vector-select-modal::after{content:'';position:absolute;left:calc(var(--anchor-x, 50%) - 6px);width:12px;height:12px;background:#fff;border-right:1px solid rgba(100,116,139,.18);border-bottom:1px solid rgba(100,116,139,.18);transform:rotate(45deg);}
+.model-pop.pop-above::after,.vector-select-modal.pop-above::after{bottom:-7px;}
+.model-pop.pop-below::after,.vector-select-modal.pop-below::after{top:-7px;transform:rotate(225deg);}
 @keyframes mpIn{ from{opacity:0; transform:translateY(10px) scale(.98);} to{opacity:1; transform:none;} }
 
 /* 头部 */

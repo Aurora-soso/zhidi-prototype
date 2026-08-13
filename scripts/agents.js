@@ -1,65 +1,210 @@
 // ============ 智能体中心 ============
 const agentCats=['全部','规划类','分析类','审查类','数据类','其他'];
+
+// 智能体默认值工厂
+function createAgentDefaults(overrides={}){
+  return {
+    id:'a'+Date.now()+Math.floor(Math.random()*1000),
+    name:'新建智能体',
+    icon:'🤖',
+    iconBg:'#ECFDF5',
+    iconColor:'#10B981',
+    status:'draft',
+    cat:'规划类',
+    desc:'',
+    tools:0, kb:0,
+    avatarUrl:'',
+    tags:[],
+    promptTemplate:'custom',
+    prompt:'',
+    callableAgentIds:[],
+    atomToolNames:[],
+    openingGreeting:'',
+    exampleQuestions:[],
+    inputPlaceholder:'',
+    ...overrides
+  };
+}
+
 // 我的智能体
 let myAgents=[
-  {id:'a1',name:'国土空间规划助手',icon:'🏙️',iconBg:'#E0F2FE',iconColor:'#0EA5E9',status:'published',cat:'规划类',desc:'面向国土空间规划的智能问答与方案生成助手，内置规划法规库与用地标准。',tools:12,kb:3},
-  {id:'a2',name:'生态修复顾问',icon:'🌿',iconBg:'#ECFDF5',iconColor:'#10B981',status:'published',cat:'规划类',desc:'基于生态本底数据的修复方案推荐与成效评估，支持退化识别与措施匹配。',tools:8,kb:2},
-  {id:'a3',name:'用地合规审查官',icon:'✅',iconBg:'#FEF3C7',iconColor:'#D97706',status:'draft',cat:'审查类',desc:'自动比对用地红线、用途管制要求与准入清单，输出合规结论与整改建议。',tools:6,kb:1},
-  {id:'a4',name:'遥感影像解译师',icon:'🛰️',iconBg:'#EFF6FF',iconColor:'#3B82F6',status:'offline',cat:'分析类',desc:'自动提取建设用地、植被、水体等地物，输出矢量图斑与统计报表。',tools:5,kb:4},
-];
+  {id:'a1',name:'国土空间规划助手',icon:'🏙️',iconBg:'#E0F2FE',iconColor:'#0EA5E9',status:'published',cat:'规划类',
+    desc:'面向国土空间规划的智能问答与方案生成助手，内置规划法规库与用地标准。',
+    tools:12,kb:3,
+    author:'规划一所 · 张工', source:'自制', version:'v2.3.1', updateDate:'2026-07-31',
+    abilityDesc:'该智能体可以完成以下国土空间规划相关任务：',
+    abilityList:['用地合规性自动审查','规划方案草案生成','上位规划要点抽取','用地分类与统计'],
+    model:'Hy3（空间推理）',
+    atomToolNames:['缓冲区分析','叠置分析','坐标转换','坡度地形分析'],
+    kbItems:['国土空间规划（市级）','规划用地用海分类指南','三区三线划定成果'],
+    workflow:'规划任务识别 → 上位规划检索 → 用地合规核对 → 方案生成',
+    tags:['规划','方案生成']},
+  {id:'a2',name:'生态修复顾问',icon:'🌿',iconBg:'#ECFDF5',iconColor:'#10B981',status:'published',cat:'规划类',
+    desc:'基于生态本底数据的修复方案推荐与成效评估，支持退化识别与措施匹配。',
+    tools:8,kb:2,
+    author:'生态组 · 王工', source:'自制', version:'v1.5.0', updateDate:'2026-06-20',
+    abilityDesc:'该智能体可以完成以下生态修复相关任务：',
+    abilityList:['生态本底诊断','修复措施智能推荐','修复成效评估','退化图斑识别'],
+    model:'Hy3（空间推理）',
+    atomToolNames:['缓冲区分析','视域分析','变化检测'],
+    kbItems:['山水林田湖草沙一体化修复','矿山生态修复技术规范'],
+    workflow:'本底诊断 → → 措施匹配 → → 成效评估',
+    tags:['生态','修复']},
+  {id:'a3',name:'用地合规审查官',icon:'✅',iconBg:'#FEF3C7',iconColor:'#D97706',status:'draft',cat:'审查类',
+    desc:'自动比对用地红线、用途管制要求与准入清单，输出合规结论与整改建议。',tools:6,kb:1},
+  {id:'a4',name:'遥感影像解译师',icon:'🛰️',iconBg:'#EFF6FF',iconColor:'#3B82F6',status:'offline',cat:'分析类',
+    desc:'自动提取建设用地、植被、水体等地物，输出矢量图斑与统计报表。',tools:5,kb:4},
+].map(a=>createAgentDefaults(a));
+
 // 智能体广场
 let squareAgents=[
-  {id:'s1',name:'遥感影像解译',icon:'🛰️',iconBg:'#EFF6FF',iconColor:'#3B82F6',cat:'分析类',desc:'自动提取建设用地、植被、水体等地物，输出矢量图斑。',publisher:'研发团队',usage:1280,rating:4.8},
-  {id:'s2',name:'用地合规性检查',icon:'✅',iconBg:'#FEF3C7',iconColor:'#D97706',cat:'审查类',desc:'比对用地红线与用途管制，秒级输出合规结论。',publisher:'规划一所',usage:932,rating:4.7},
-  {id:'s3',name:'规划方案生成器',icon:'🏙️',iconBg:'#E0F2FE',iconColor:'#0EA5E9',cat:'规划类',desc:'依据上位规划与现状数据，生成用地布局草案。',publisher:'国地规划',usage:2104,rating:4.9},
-  {id:'s4',name:'统计出图助手',icon:'📊',iconBg:'#F0FDF4',iconColor:'#16A34A',cat:'数据类',desc:'一键将属性表转为专题图与图表，支持导出。',publisher:'数据组',usage:1556,rating:4.6},
-  {id:'s5',name:'坡度地形分析',icon:'⛰️',iconBg:'#F5F3FF',iconColor:'#8B5CF6',cat:'分析类',desc:'基于 DEM 计算坡度坡向，识别适宜建设区域。',publisher:'测绘中心',usage:718,rating:4.5},
-  {id:'s6',name:'耕地保护巡查',icon:'🌾',iconBg:'#FEFCE8',iconColor:'#CA8A04',cat:'审查类',desc:'识别耕地非农化、非粮化图斑并推送整改清单。',publisher:'耕保处',usage:644,rating:4.4},
-  {id:'s7',name:'人口热力洞察',icon:'🔥',iconBg:'#FFF1F2',iconColor:'#E11D48',cat:'数据类',desc:'融合多源数据刻画人口时空分布与职住特征。',publisher:'研发团队',usage:889,rating:4.3},
-  {id:'s8',name:'通用问答助手',icon:'💡',iconBg:'#ECFEFF',iconColor:'#06B6D4',cat:'其他',desc:'面向空间业务的通用知识问答与文档摘要。',publisher:'平台',usage:3301,rating:4.7},
+  {id:'s1',name:'遥感影像解译',icon:'🛰️',iconBg:'#EFF6FF',iconColor:'#3B82F6',cat:'分析类',
+    desc:'自动提取建设用地、植被、水体等地物，输出矢量图斑。',publisher:'研发团队', usage:21280, rating:4.8,
+    source:'官方', version:'v3.2.0', updateDate:'2026-08-01',
+    abilityDesc:'该智能体可以完成以下遥感解译任务：',
+    abilityList:['建设用地自动提取','植被覆盖分类','水体边界识别','变化检测'],
+    model:'GPT-4 多模态',
+    tools:'建筑合规提取、遥感图斑',
+    knowledge:'GIS基础规范库、遥感影像样本集',
+    workflow:'影像预处理 → 地物识别 → 矢量化 → 分类统计',
+    favorites:5640, reviewCount:128, ratingDist:{5:78,4:15,3:5,2:1,1:1}},
+  {id:'s2',name:'用地合规性检查',icon:'✅',iconBg:'#FEF3C7',iconColor:'#D97706',cat:'审查类',
+    desc:'比对用地红线与用途管制，秒级输出合规结论。',publisher:'规划一所',usage:9320,rating:4.7,
+    source:'官方', version:'v2.1.4', updateDate:'2026-07-15',
+    abilityDesc:'该智能体可以完成以下合规审查任务：',
+    abilityList:['用地红线比对','用途管制核查','准入清单匹配','整改建议生成'],
+    model:'Hy3（空间推理）',
+    tools:'缓冲区分析、坐标转换',
+    knowledge:'国土空间规划法规库',
+    workflow:'输入用地 → 比对规则 → 输出结论',
+    favorites:3210, reviewCount:86, ratingDist:{5:72,4:20,3:5,2:2,1:1}},
+  {id:'s3',name:'规划方案生成器',icon:'🏙️',iconBg:'#E0F2FE',iconColor:'#0EA5E9',cat:'规划类',
+    desc:'依据上位规划与现状数据，生成用地布局草案。',publisher:'国地规划',usage:21040,rating:4.9,
+    source:'官方', version:'v4.0.0', updateDate:'2026-07-25',
+    abilityDesc:'该智能体可以完成以下规划方案任务：',
+    abilityList:['上位规划要点抽取','用地布局草案生成','指标核算与校核','规划文本生成'],
+    model:'GPT-4',
+    tools:'缓冲区分析、叠置分析、坐标转换',
+    knowledge:'国土空间规划（市级）',
+    workflow:'需求解析 → 数据叠加 → 布局生成 → 指标核算',
+    favorites:8120, reviewCount:215, ratingDist:{5:82,4:12,3:4,2:1,1:1}},
+  {id:'s4',name:'统计出图助手',icon:'📊',iconBg:'#F0FDF4',iconColor:'#16A34A',cat:'数据类',
+    desc:'一键将属性表转为专题图与图表，支持导出。',publisher:'数据组',usage:15560,rating:4.6,
+    source:'团队', version:'v1.8.0', updateDate:'2026-06-30',
+    abilityDesc:'该智能体可以完成以下统计制图任务：',
+    abilityList:['属性表转专题图','分类统计图表','批量制图导出','多图层叠加'],
+    model:'Hy3',
+    tools:'坐标转换、空间查询',
+    knowledge:'GIS基础规范库',
+    workflow:'读取属性 → 选择图表 → 渲染输出',
+    favorites:2870, reviewCount:64, ratingDist:{5:70,4:20,3:7,2:2,1:1}},
+  {id:'s5',name:'坡度地形分析',icon:'⛰️',iconBg:'#F5F3FF',iconColor:'#8B5CF6',cat:'分析类',
+    desc:'基于 DEM 计算坡度坡向，识别适宜建设区域。',publisher:'测绘中心',usage:7180,rating:4.5,
+    source:'团队', version:'v2.0.0', updateDate:'2026-05-10',
+    abilityDesc:'该智能体可以完成以下地形分析任务：',
+    abilityList:['DEM坡度坡向计算','适宜性分级','建设区域识别','地形剖面分析'],
+    model:'Hy3',
+    tools:'视域分析、空间查询',
+    knowledge:'DEM样本库',
+    workflow:'加载DEM → 计算坡度 → 分级输出',
+    favorites:1640, reviewCount:38, ratingDist:{5:65,4:22,3:8,2:3,1:2}},
+  {id:'s6',name:'耕地保护巡查',icon:'🌾',iconBg:'#FEFCE8',iconColor:'#CA8A04',cat:'审查类',
+    desc:'识别耕地非农化、非粮化图斑并推送整改清单。',publisher:'耕保处',usage:6440,rating:4.4,
+    source:'官方', version:'v1.2.5', updateDate:'2026-04-28',
+    abilityDesc:'该智能体可以完成以下耕地保护任务：',
+    abilityList:['耕地非农化识别','耕地非粮化识别','整改清单生成','巡查报告输出'],
+    model:'Hy3',
+    tools:'变化检测、遥感图斑',
+    knowledge:'耕地保护法规库',
+    workflow:'影像比对 → 图斑提取 → 清单输出',
+    favorites:1320, reviewCount:32, ratingDist:{5:60,4:25,3:10,2:3,1:2}},
+  {id:'s7',name:'人口热力洞察',icon:'🔥',iconBg:'#FFF1F2',iconColor:'#E11D48',cat:'数据类',
+    desc:'融合多源数据刻画人口时空分布与职住特征。',publisher:'研发团队',usage:8890,rating:4.3,
+    source:'团队', version:'v1.5.0', updateDate:'2026-05-20',
+    abilityDesc:'该智能体可以完成以下人口分析任务：',
+    abilityList:['人口时空分布','职住特征刻画','热力图渲染','趋势预测'],
+    model:'Hy3',
+    tools:'空间查询、坐标转换',
+    knowledge:'人口统计样本',
+    workflow:'加载数据 → 分布计算 → 可视化输出',
+    favorites:1180, reviewCount:28, ratingDist:{5:55,4:28,3:12,2:3,1:2}},
+  {id:'s8',name:'通用问答助手',icon:'💡',iconBg:'#ECFEFF',iconColor:'#06B6D4',cat:'其他',
+    desc:'面向空间业务的通用知识问答与文档摘要。',publisher:'平台',usage:33010,rating:4.7,
+    source:'官方', version:'v5.0.0', updateDate:'2026-08-05',
+    abilityDesc:'该智能体可以完成以下通用问答任务：',
+    abilityList:['空间业务知识问答','规划文档摘要','法规条文检索','要点提炼'],
+    model:'GPT-4',
+    tools:'—',
+    knowledge:'通用GIS知识库',
+    workflow:'问题解析 → 知识检索 → 答案生成',
+    favorites:12480, reviewCount:312, ratingDist:{5:75,4:18,3:5,2:1,1:1}},
 ];
+
+// 我收藏的智能体（初始示例：从智能体广场收藏 2 个）
+let favoriteAgents = [
+  JSON.parse(JSON.stringify(squareAgents[0])),  // s1 遥感影像解译
+  JSON.parse(JSON.stringify(squareAgents[2])),  // s3 规划方案生成器
+];
+
 const statusText={published:'已发布',draft:'草稿',offline:'已下架'};
 
-function agentCardHTML(a,isMine){
-  const acts = isMine
-    ? `<button class="ac-btn" onclick="openAgentDetail('${a.id}','mine')">详情</button>
-       <button class="ac-btn blue" onclick="tryAgent('${a.id}')">试用</button>
-       <button class="ac-btn" onclick="editAgent('${a.id}')">编辑</button>
-       ${a.status==='published'
-          ? `<button class="ac-btn" onclick="togglePublish('${a.id}')">下架</button>`
-          : `<button class="ac-btn primary" onclick="togglePublish('${a.id}')">发布</button>`}
-       <button class="ac-btn danger" onclick="deleteAgent('${a.id}')">删除</button>`
-    : `<button class="ac-btn primary" onclick="useSquare('${a.id}')">调用</button>
-       <button class="ac-btn" onclick="openAgentDetail('${a.id}','square')">详情</button>`;
-  return `<div class="agent-card">
+function agentCardHTML(a, source){
+  // source: 'mine'（我创建的）|'favorite'（我收藏的）|'square'（广场）
+  const isMine = source === 'mine';
+  const isFav = source === 'favorite';
+  let acts;
+  if(isMine){
+    acts = `<button class="ac-btn" data-act="edit">编辑</button>
+            <button class="ac-btn ${a.status==='published'?'':'primary'}" data-act="publish">${a.status==='published'?'下架':'发布'}</button>
+            <button class="ac-btn blue" data-act="use">使用</button>
+            <button class="ac-btn danger" data-act="del">删除</button>`;
+  } else if(isFav){
+    acts = `<button class="ac-btn primary" data-act="use-square">使用</button>
+            <button class="ac-btn" data-act="detail">详情</button>
+            <button class="ac-btn danger" data-act="unfav">取消收藏</button>`;
+  } else { // square
+    acts = `<button class="ac-btn primary" data-act="use-square">调用</button>
+            <button class="ac-btn" data-act="detail">详情</button>`;
+  }
+  const favBadge = (source==='square' && isFavorited(a.id)) ? '<div class="ac-fav" title="已收藏">⭐</div>' : '';
+  const statusHtml = isMine ? `<span class="a-status ${a.status}">${statusText[a.status]}</span>` : '';
+  const pubHtml = isMine ? ('配置 · '+a.cat) : (isFav ? ('来自广场 · '+(a.publisher||'')) : ('发布者：'+(a.publisher||'')));
+  const metaHtml = isMine
+    ? `<span class="m">🧰 ${a.tools||0} 工具</span><span class="m">📚 ${a.kb||0} 知识库</span>`
+    : `<span class="m">📞 ${formatNum(a.usage||0)} 调用</span><span class="m">⭐ ${a.rating||'—'}</span><span class="m">🏷️ ${a.cat}</span>`;
+  return `<div class="agent-card" data-id="${a.id}" data-source="${source}">
+    ${favBadge}
     <div class="ac-top">
       <div class="ac-icon" style="background:${a.iconBg};color:${a.iconColor}">${a.icon}</div>
       <div class="ac-title">
-        <div class="ac-name">${a.name}<span class="a-status ${a.status}">${statusText[a.status]}</span></div>
-        <div class="ac-pub">${isMine?('配置 · '+a.cat):('发布者：'+a.publisher)}</div>
+        <div class="ac-name">${a.name}${statusHtml}</div>
+        <div class="ac-pub">${pubHtml}</div>
       </div>
     </div>
-    <div class="ac-desc">${a.desc}</div>
-    <div class="ac-meta">
-      ${isMine
-        ? `<span class="m">🧰 ${a.tools} 工具</span><span class="m">📚 ${a.kb} 知识库</span>`
-        : `<span class="m">📞 ${a.usage} 次调用</span><span class="m">⭐ ${a.rating}</span><span class="m">🏷️ ${a.cat}</span>`}
-    </div>
+    <div class="ac-desc">${a.desc||''}</div>
+    <div class="ac-meta">${metaHtml}</div>
     <div class="ac-acts">${acts}</div>
   </div>`;
 }
 function renderMine(kw=''){
   kw=kw.trim().toLowerCase();
-  const list=myAgents.filter(a=>!kw || a.name.toLowerCase().includes(kw) || a.desc.toLowerCase().includes(kw) || a.cat.toLowerCase().includes(kw));
-  $('#mineGrid').innerHTML = list.length
-    ? list.map(a=>agentCardHTML(a,true)).join('')
-    : `<div class="empty-tip">没有匹配的智能体，换个关键词试试～</div>`;
+  // 我创建的
+  const created = myAgents.filter(a=>!kw || a.name.toLowerCase().includes(kw) || (a.desc||'').toLowerCase().includes(kw) || a.cat.toLowerCase().includes(kw) || (a.tags||[]).some(t=>t.toLowerCase().includes(kw)));
+  $('#myCreatedCount').textContent = created.length;
+  $('#mineCreatedGrid').innerHTML = created.length
+    ? created.map(a=>agentCardHTML(a,'mine')).join('')
+    : '<div class="agent-empty">还没有创建智能体，<a id="goCreateAgent">＋ 新建一个</a></div>';
+  // 我收藏的
+  const fav = favoriteAgents.filter(a=>!kw || a.name.toLowerCase().includes(kw) || (a.desc||'').toLowerCase().includes(kw) || (a.publisher||'').toLowerCase().includes(kw));
+  $('#myFavoriteCount').textContent = fav.length;
+  $('#mineFavoriteGrid').innerHTML = fav.map(a=>agentCardHTML(a,'favorite')).join('');
+  $('#mineFavoriteEmpty').style.display = fav.length ? 'none' : 'block';
 }
 function renderSquare(kw='',cat='全部'){
   kw=kw.trim().toLowerCase();
   const list=squareAgents.filter(a=>(cat==='全部'||a.cat===cat) && (!kw || a.name.toLowerCase().includes(kw) || a.desc.toLowerCase().includes(kw) || a.publisher.toLowerCase().includes(kw)));
   $('#squareGrid').innerHTML = list.length
-    ? list.map(a=>agentCardHTML(a,false)).join('')
+    ? list.map(a=>agentCardHTML(a,'square')).join('')
     : `<div class="empty-tip">广场中没有匹配的智能体</div>`;
 }
 // 分类标签
@@ -72,7 +217,7 @@ document.querySelectorAll('#squareTags .tag').forEach(t=>{
     renderSquare($('#squareSearch').value,curSquareCat);
   });
 });
-// Tab 切换
+// Tab 切换：默认激活「智能体广场」
 document.querySelectorAll('.agent-tab').forEach(tab=>{
   tab.addEventListener('click',()=>{
     document.querySelectorAll('.agent-tab').forEach(x=>x.classList.remove('active'));
@@ -84,11 +229,8 @@ document.querySelectorAll('.agent-tab').forEach(tab=>{
 });
 $('#mineSearch').addEventListener('input',e=>renderMine(e.target.value));
 $('#squareSearch').addEventListener('input',e=>renderSquare(e.target.value,curSquareCat));
-$('#newAgentBtn').addEventListener('click',()=>{
-  const a={id:'a'+Date.now(),name:'新建智能体',icon:'🤖',iconBg:'#ECFDF5',iconColor:'#10B981',status:'draft',cat:'规划类',desc:'请编辑该智能体的描述、工具集与知识库。',tools:0,kb:0};
-  myAgents.unshift(a); renderMine($('#mineSearch').value);
-  toast('已新建智能体（草稿）'); editAgent(a.id);
-});
+$('#newAgentBtn').addEventListener('click',()=>openAgentForm('create'));
+
 function togglePublish(id){
   const a=myAgents.find(x=>x.id===id); if(!a) return;
   if(a.status==='published'){ a.status='offline'; toast(`「${a.name}」已下架`); }
@@ -100,96 +242,571 @@ function deleteAgent(id){
   if(!confirm(`确认删除智能体「${a.name}」？此操作不可恢复。`)) return;
   myAgents=myAgents.filter(x=>x.id!==id); renderMine($('#mineSearch').value); toast('已删除');
 }
-function tryAgent(id){
-  const a=[...myAgents,...squareAgents].find(x=>x.id===id); if(!a) return;
-  switchPage('workbench');
-  addBubble('user',`试用智能体：${a.name}`);
-  aiReply(`已加载「${a.name}」。${a.desc.slice(0,30)}…你可直接描述任务，或在地图上圈选范围让我处理。`);
+function useAgent(id){
+  const a=myAgents.find(x=>x.id===id); if(!a) return;
+  if(typeof switchPage==='function') switchPage('workbench');
+  if(typeof setCurrentAgent==='function') setCurrentAgent(a);
+  else {
+    currentAgent={id:a.id,name:a.name,icon:a.icon,cat:a.cat,desc:a.desc};
+    $('#aibAvatar').textContent=a.icon;
+    $('#aibNameText').textContent=a.name;
+  }
+  addBubble('user',`使用智能体：${a.name}`);
+  aiReply(`已切换至「${a.name}」。${a.desc.slice(0,30)}…你可直接描述任务，或在地图上圈选范围让我处理。`);
 }
 function useSquare(id){
   const a=squareAgents.find(x=>x.id===id); if(!a) return;
-  toast(`已调用「${a.name}」，正在为你准备…`);
-  switchPage('workbench');
+  if(typeof switchPage==='function') switchPage('workbench');
+  if(typeof setCurrentAgent==='function') setCurrentAgent(a);
+  else {
+    currentAgent={id:a.id,name:a.name,icon:a.icon,cat:a.cat,desc:a.desc};
+    $('#aibAvatar').textContent=a.icon;
+    $('#aibNameText').textContent=a.name;
+  }
   addBubble('user',`调用智能体：${a.name}`);
   aiReply(`已接入「${a.name}」（发布者：${a.publisher}）。请描述需求，我将调用其能力与工具集为你处理。`);
 }
-// 详情 / 编辑模态
+
+// ============ 通用工具函数 ============
+function formatNum(n){
+  if(n>=10000) return (n/10000).toFixed(1)+'w';
+  if(n>=1000) return (n/1000).toFixed(1)+'k';
+  return n+'';
+}
+function renderToolsField(a){
+  if(a.atomToolNames && a.atomToolNames.length) return a.atomToolNames.join('、');
+  if(typeof a.tools==='number') return a.tools+' 个原子工具';
+  if(typeof a.tools==='string' && a.tools) return a.tools;
+  return '—';
+}
+function renderKbField(a){
+  if(a.kbItems && a.kbItems.length) return a.kbItems.join('、');
+  if(typeof a.kb==='number') return a.kb+' 个知识库';
+  if(typeof a.knowledge==='string' && a.knowledge) return a.knowledge;
+  return '—';
+}
+
+// ============ 收藏机制 ============
+function isFavorited(id){
+  return favoriteAgents.some(x=>x.id===id);
+}
+function toggleFavorite(id){
+  if(isFavorited(id)){
+    favoriteAgents = favoriteAgents.filter(x=>x.id!==id);
+    toast('已取消收藏');
+  } else {
+    const src = squareAgents.find(x=>x.id===id);
+    if(src){ favoriteAgents.unshift(JSON.parse(JSON.stringify(src))); toast('已收藏到「我收藏的」'); }
+    else { toast('收藏失败：未在广场找到'); return; }
+  }
+  renderSquare($('#squareSearch').value, curSquareCat);
+  renderMine($('#mineSearch').value);
+  if($('#addFavBtn')) $('#addFavBtn').textContent = isFavorited(id) ? '⭐ 已收藏' : '⭐ 收藏';
+}
+function unfavoriteAgent(id){
+  favoriteAgents = favoriteAgents.filter(x=>x.id!==id);
+  toast('已取消收藏');
+  renderMine($('#mineSearch').value);
+  if($('#addFavBtn') && $('#addBody').dataset.id===id){
+    $('#addFavBtn').textContent = '⭐ 收藏';
+  }
+}
+function copyAndCreateAgent(id, source){
+  const src = source==='mine' ? myAgents.find(x=>x.id===id) : (squareAgents.find(x=>x.id===id) || favoriteAgents.find(x=>x.id===id));
+  if(!src){ toast('复制失败'); return; }
+  openAgentForm('create', null, src);
+}
+
+// ============ 详情页（跳转至独立 page） ============
+function openAgentDetailPage(id, source){
+  switchPage('agent-detail');
+  renderAgentDetailPage(id, source);
+}
+function renderAgentDetailPage(id, source){
+  let a;
+  if(source==='mine') a = myAgents.find(x=>x.id===id);
+  else if(source==='favorite') a = favoriteAgents.find(x=>x.id===id);
+  else a = squareAgents.find(x=>x.id===id);
+  if(!a){ $('#addBody').innerHTML = '<div class="agent-empty">未找到该智能体</div>'; return; }
+
+  const isMineSource = source==='mine';
+  const fav = isFavorited(id);
+
+  const metaParts = [];
+  if(a.author)     metaParts.push(`<span><b>作者</b>${a.author}</span>`);
+  if(a.source)     metaParts.push(`<span><b>来源</b>${a.source}</span>`);
+  if(a.publisher)  metaParts.push(`<span><b>发布者</b>${a.publisher}</span>`);
+  if(a.version)    metaParts.push(`<span><b>版本</b>${a.version}</span>`);
+  if(a.updateDate) metaParts.push(`<span><b>更新</b>${a.updateDate}</span>`);
+
+  const abilityList = a.abilityList || [];
+
+  const statsHtml = isMineSource ? '' : `
+    <div class="add-card">
+      <div class="add-card-head"><span class="add-card-ic">📊</span><h3>使用数量</h3></div>
+      <div class="add-stats">
+        <div class="add-stat"><div class="add-stat-num">${formatNum(a.usage||0)}</div><div class="add-stat-label">调用次数</div></div>
+        <div class="add-stat"><div class="add-stat-num">${formatNum(a.favorites||0)}</div><div class="add-stat-label">收藏数量</div></div>
+        <div class="add-stat"><div class="add-stat-num">${a.rating||'—'}</div><div class="add-stat-label">评分</div></div>
+        <div class="add-stat"><div class="add-stat-num">${a.reviewCount||0}条</div><div class="add-stat-label">用户评价</div></div>
+      </div>
+    </div>
+    <div class="add-card">
+      <div class="add-card-head"><span class="add-card-ic">⭐</span><h3>评分分布</h3></div>
+      <div class="add-rating">
+        ${[5,4,3,2,1].map(star=>{
+          const pct = (a.ratingDist && a.ratingDist[star]) || 0;
+          return `<div class="add-rating-row">
+            <span class="add-rating-label">★${star}</span>
+            <div class="add-rating-bar"><div class="add-rating-fill" style="width:${pct}%"></div></div>
+            <span class="add-rating-pct">${pct}%</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+
+  const actionsHtml = isMineSource
+    ? `<button class="add-btn" id="addUseBtn"><span class="ai">▶</span> 开始使用</button>
+       <button class="add-btn outline" id="addEditBtn">编辑</button>`
+    : `<button class="add-btn outline orange" id="addFavBtn">${fav?'⭐ 已收藏':'⭐ 收藏'}</button>
+       <button class="add-btn outline" id="addCopyBtn">复制创建</button>
+       <button class="add-btn" id="addUseBtn"><span class="ai">▶</span> 开始使用</button>`;
+
+  $('#addBody').dataset.id = id;
+  $('#addBody').dataset.source = source;
+  $('#addBody').innerHTML = `
+    <div class="add-card add-card-base">
+      <div class="add-base">
+        <div class="add-base-left">
+          <div class="add-avatar" style="background:${a.iconBg};color:${a.iconColor}">${a.icon}</div>
+        </div>
+        <div class="add-base-right">
+          <h2 class="add-name">${a.name}</h2>
+          <p class="add-desc">${a.desc||''}</p>
+          <div class="add-meta">${metaParts.join('<span class="dot">·</span>')}</div>
+        </div>
+      </div>
+    </div>
+    <div class="add-card">
+      <div class="add-card-head"><span class="add-card-ic">📝</span><h3>能力说明</h3></div>
+      <div class="add-ability">
+        <p class="add-ability-intro">${a.abilityDesc||'该智能体提供以下能力：'}</p>
+        <ul class="add-ability-list">${abilityList.map(it=>`<li>${it}</li>`).join('')}</ul>
+      </div>
+    </div>
+    <div class="add-card">
+      <div class="add-card-head"><span class="add-card-ic">🧩</span><h3>能力组成</h3></div>
+      <dl class="add-comp-dl">
+        <dt>模型</dt><dd>${a.model||'—'}</dd>
+        <dt>工具</dt><dd>${renderToolsField(a)}</dd>
+        <dt>知识</dt><dd>${renderKbField(a)}</dd>
+        <dt>工作流</dt><dd>${a.workflow||'—'}</dd>
+      </dl>
+    </div>
+    ${statsHtml}
+    <div class="add-actions">${actionsHtml}</div>
+  `;
+  bindDetailActions();
+}
+function bindDetailActions(){
+  const id = $('#addBody').dataset.id;
+  const source = $('#addBody').dataset.source;
+  const useBtn = $('#addUseBtn');
+  if(useBtn) useBtn.addEventListener('click', ()=>{ source==='mine' ? useAgent(id) : useSquare(id); });
+  const editBtn = $('#addEditBtn');
+  if(editBtn) editBtn.addEventListener('click', ()=> editAgent(id));
+  const favBtn = $('#addFavBtn');
+  if(favBtn) favBtn.addEventListener('click', ()=> toggleFavorite(id));
+  const copyBtn = $('#addCopyBtn');
+  if(copyBtn) copyBtn.addEventListener('click', ()=> copyAndCreateAgent(id, source));
+}
+function editAgent(id){
+  openAgentForm('edit', id);
+}
+window.openAgentDetailPage = openAgentDetailPage;
+window.toggleFavorite = toggleFavorite;
+window.unfavoriteAgent = unfavoriteAgent;
+window.copyAndCreateAgent = copyAndCreateAgent;
+window.isFavorited = isFavorited;
+
+// ============ 通用 modal（保留以备复用） ============
 function openModal(html){ $('#modalBox').innerHTML=html; $('#modalMask').classList.add('show'); }
 function closeModal(){ $('#modalMask').classList.remove('show'); }
 $('#modalMask').addEventListener('click',e=>{ if(e.target.id==='modalMask') closeModal(); });
-function openAgentDetail(id,type){
-  const a=(type==='mine'?myAgents:squareAgents).find(x=>x.id===id); if(!a) return;
-  const rows=type==='mine'
-    ? `<div class="detail-row"><span class="dl">状态</span><span class="dv"><span class="a-status ${a.status}">${statusText[a.status]}</span></span></div>
-       <div class="detail-row"><span class="dl">分类</span><span class="dv">${a.cat}</span></div>
-       <div class="detail-row"><span class="dl">工具数量</span><span class="dv">${a.tools}</span></div>
-       <div class="detail-row"><span class="dl">知识库</span><span class="dv">${a.kb}</span></div>`
-    : `<div class="detail-row"><span class="dl">发布者</span><span class="dv">${a.publisher}</span></div>
-       <div class="detail-row"><span class="dl">分类</span><span class="dv">${a.cat}</span></div>
-       <div class="detail-row"><span class="dl">累计调用</span><span class="dv">${a.usage}</span></div>
-       <div class="detail-row"><span class="dl">评分</span><span class="dv">⭐ ${a.rating}</span></div>`;
-  const editBtn = type==='mine'
-    ? `<button class="mbtn primary" onclick="agentAction('${type}','${a.id}','edit')">编辑</button>`
-    : '';
-  const actBtn = `<button class="mbtn ${type==='mine'?'':'blue'}" onclick="agentAction('${type}','${a.id}','${type==='mine'?'try':'use'}')">${type==='mine'?'试用':'调用'}</button>`;
-  openModal(`
-    <div class="modal-head"><h3>${a.icon} ${a.name}</h3><span class="x" onclick="closeModal()">✕</span></div>
-    <div class="modal-body">
-      <p style="font-size:13px;color:var(--t-body);line-height:1.7;margin:0 0 16px;">${a.desc}</p>
-      ${rows}
-    </div>
-    <div class="modal-foot">
-      ${editBtn}
-      ${actBtn}
-      <button class="mbtn" onclick="closeModal()">关闭</button>
-    </div>`);
+window.editAgent=editAgent;
+
+// ============ 智能体新建/编辑表单（四模块） ============
+let agentFormMode='create';
+let agentFormDraft=null;
+let agentFormEditing=false;    // 进入表单是否为「编辑」意图（决定页面标题，与保存分支解耦）
+let agentEditPrevPage='agent'; // 进入编辑页前的页面（返回按钮做历史回退的目标页）
+// 页面 id → 中文名（返回按钮 tooltip 用）
+const PAGE_LABEL_MAP={ workbench:'工作台', tools:'工具中心', agent:'智能体中心', 'agent-detail':'智能体详情', res:'资源库', settings:'设置', notif:'通知' };
+
+function openAgentForm(mode, id, preset=null){
+  agentFormMode=mode;
+  agentFormEditing=(mode==='edit');
+  // 记录进入编辑页之前的页面（返回按钮据此回退），需在 switchPage 前读取
+  agentEditPrevPage=(typeof pages!=='undefined' && pages.find(p=>$('#page-'+p).classList.contains('active'))) || 'workbench';
+  // 返回按钮标题随目标页联动，避免 tooltip 与实际去向不一致
+  const backBtn=$('#aeeBackBtn');
+  if(backBtn) backBtn.title='返回'+(PAGE_LABEL_MAP[agentEditPrevPage]||'上一页');
+  if(mode==='edit'){
+    const src=myAgents.find(x=>x.id===id);
+    if(!src){
+      // 当前智能体不在「我的智能体」列表中（如默认助手 / 广场智能体）
+      // → 复用新建表单，预填其信息，保存后作为新智能体沉淀到「我的智能体」
+      agentFormMode='create';
+      agentFormDraft=createAgentDefaults(stripAgentId(preset && typeof preset==='object' ? preset : currentAgent));
+    } else {
+      agentFormDraft=createAgentDefaults(JSON.parse(JSON.stringify(src)));
+    }
+  }else{
+    if(preset && typeof preset==='object'){
+      agentFormDraft=createAgentDefaults(stripAgentId(preset));
+    } else {
+      agentFormDraft=createAgentDefaults({name:'新建智能体'});
+    }
+  }
+  switchPage('agent-edit');
+  renderAgentForm();
 }
-function agentAction(type,id,act){
-  if(act==='edit') editAgent(id);
-  else if(act==='try') tryAgent(id);
-  else if(act==='use') useSquare(id);
+// 去除 id / status，克隆为可重新保存的新草稿
+function stripAgentId(a){
+  if(!a || typeof a!=='object') return {name:'新建智能体'};
+  const {id, status, ...rest}=a;
+  return Object.assign({}, rest, {name:rest.name||'新建智能体', status:'draft'});
 }
-function editAgent(id){
-  const a=myAgents.find(x=>x.id===id); if(!a) return;
-  openModal(`
-    <div class="modal-head"><h3>编辑智能体</h3><span class="x" onclick="closeModal()">✕</span></div>
-    <div class="modal-body">
-      <div class="field"><label>名称</label><input id="eaName" value="${a.name}" /></div>
-      <div class="field"><label>图标 Emoji</label><input id="eaIcon" value="${a.icon}" /></div>
-      <div class="field"><label>分类</label><select id="eaCat">${agentCats.filter(c=>c!=='全部').map(c=>`<option ${c===a.cat?'selected':''}>${c}</option>`).join('')}</select></div>
-      <div class="field"><label>描述</label><textarea id="eaDesc">${a.desc}</textarea></div>
-      <div class="field"><label>工具数量</label><input id="eaTools" type="number" value="${a.tools}" /></div>
-      <div class="field"><label>知识库数量</label><input id="eaKb" type="number" value="${a.kb}" /></div>
-    </div>
-    <div class="modal-foot">
-      <button class="mbtn" onclick="closeModal()">取消</button>
-      <button class="mbtn primary" onclick="saveAgent('${a.id}')">保存</button>
-    </div>`);
-}
-function saveAgent(id){
-  const a=myAgents.find(x=>x.id===id); if(!a) return;
-  a.name=$('#eaName').value.trim()||a.name;
-  a.icon=$('#eaIcon').value.trim()||a.icon;
-  a.cat=$('#eaCat').value;
-  a.desc=$('#eaDesc').value.trim()||a.desc;
-  a.tools=parseInt($('#eaTools').value)||0;
-  a.kb=parseInt($('#eaKb').value)||0;
-  renderMine($('#mineSearch').value); closeModal(); toast('已保存修改');
+window.openAgentForm=openAgentForm;
+
+function renderAgentForm(){
+  const a=agentFormDraft;
+  // 页面标题：编辑意图 → 「编辑」+ 被编辑智能体实际名称（取自草稿真实名称，非硬编码）
+  $('#aeePageTitle').textContent=agentFormEditing ? ('编辑'+(a.name||'智能体')) : '新建智能体';
+  $('#aeeTitleIcon').textContent=a.icon||'🤖';
+  $('#aeeName').value=a.name||'';
+  $('#aeeNameCount').textContent=($('#aeeName').value.length)+'/100';
+  $('#aeeDesc').value=a.desc||'';
+  $('#aeeDescCount').textContent=($('#aeeDesc').value.length)+'/500';
+  $('#aeePromptTemplate').value=a.promptTemplate||'custom';
+  $('#aeePrompt').value=a.prompt||'';
+  $('#aeeOpening').value=a.openingGreeting||'';
+  $('#aeeInputPlaceholder').value=a.inputPlaceholder||'';
+
+  const preview=$('#aeeAvatarPreview');
+  if(a.avatarUrl){ preview.innerHTML=`<img src="${a.avatarUrl}" alt="avatar">`; }
+  else { preview.innerHTML=''; preview.textContent=a.icon||'🤖'; }
+
+  renderTags();
+  renderPickedAgents();
+  renderPickedTools();
+  renderExamples();
+  bindAgentFormEvents();
 }
 
-// ============ 智能体编辑页（子智能体 + 原子工具） ============
-// 候选子智能体池（编辑页专用）
-const candidateSubAgents=[
-  {id:'sub-1',name:'用地审查员',icon:'✅',desc:'自动核对用地红线、用途管制与准入清单。'},
-  {id:'sub-2',name:'遥感解译师',icon:'🛰️',desc:'提取建设用地、植被、水体等地物图斑。'},
-  {id:'sub-3',name:'规划方案师',icon:'🏙️',desc:'依据上位规划生成用地布局草案。'},
-  {id:'sub-4',name:'生态评估员',icon:'🌿',desc:'评估生态本底与修复成效。'},
-  {id:'sub-5',name:'统计制图员',icon:'📊',desc:'将属性表转为专题图与统计图表。'},
-  {id:'sub-6',name:'地形分析员',icon:'⛰️',desc:'基于 DEM 计算坡度坡向与适宜性。'},
-];
-// 候选原子工具池从 toolGroupsData 抽取
+function renderTags(){
+  const list=$('#aeeTagsList');
+  const tags=agentFormDraft.tags||[];
+  list.innerHTML=tags.map((t,i)=>`<span class="aee-tag">${t}<span class="x" data-idx="${i}">✕</span></span>`).join('');
+  list.querySelectorAll('.x').forEach(x=>{
+    x.addEventListener('click',()=>{ agentFormDraft.tags.splice(parseInt(x.dataset.idx),1); renderTags(); });
+  });
+}
+
+// ============ 能力配置：表单选择器模式 ============
+function getPickedAgentById(id){
+  return myAgents.find(x=>x.id===id) || squareAgents.find(x=>x.id===id);
+}
+// 原子工具图标：优先匹配工具中心数据（按名称），缺失时按类型兜底
+function getToolIconInfo(name){
+  const base = name.replace(/\s+(Skill|MCP)$/i,'');
+  const colorMap={purple:['#F5F3FF','#8B5CF6'],blue:['#EFF6FF','#0EA5E9'],green:['#ECFDF5','#10B981'],amber:['#FFFBEB','#F59E0B']};
+  if(typeof toolGroupsData!=='undefined'){
+    for(const g of toolGroupsData){
+      for(const t of g.tools){
+        if(t.name===name || t.name===base){
+          const [bg,color]=colorMap[t.color]||['#F8FAFC','#64748B'];
+          return {icon:t.icon, bg, color, group:g.label};
+        }
+      }
+    }
+  }
+  const isMcp=/\sMCP$/i.test(name);
+  return {icon:isMcp?'🔌':'🧰', bg:'#F8FAFC', color:'#64748B', group:isMcp?'MCP':'Skill'};
+}
+// 已配置标签行：智能体
+function renderPickedAgents(){
+  const row=$('#aeePickedAgents');
+  const ids=agentFormDraft.callableAgentIds||[];
+  if(!ids.length){ row.innerHTML='<span class="cap-pick-empty">暂未配置智能体</span>'; return; }
+  row.innerHTML=ids.map(id=>{
+    const a=getPickedAgentById(id);
+    if(!a) return '';
+    return `<span class="cap-pick-tag">
+      <span class="cpt-ic" style="background:${a.iconBg};color:${a.iconColor}">${a.icon}</span>
+      <span class="cpt-name">${a.name}</span>
+      <span class="cpt-x" data-rid="${id}" title="移除">✕</span>
+    </span>`;
+  }).join('');
+  row.querySelectorAll('.cpt-x').forEach(x=>{
+    x.addEventListener('click',()=>{
+      agentFormDraft.callableAgentIds=agentFormDraft.callableAgentIds.filter(i=>i!==x.dataset.rid);
+      renderPickedAgents();
+    });
+  });
+}
+// 已配置标签行：原子工具
+function renderPickedTools(){
+  const row=$('#aeePickedTools');
+  const names=agentFormDraft.atomToolNames||[];
+  if(!names.length){ row.innerHTML='<span class="cap-pick-empty">暂未配置原子工具</span>'; return; }
+  row.innerHTML=names.map(nm=>{
+    const info=getToolIconInfo(nm);
+    return `<span class="cap-pick-tag">
+      <span class="cpt-ic" style="background:${info.bg};color:${info.color}">${info.icon}</span>
+      <span class="cpt-name">${nm}</span>
+      <span class="cpt-x" data-rid="${nm}" title="移除">✕</span>
+    </span>`;
+  }).join('');
+  row.querySelectorAll('.cpt-x').forEach(x=>{
+    x.addEventListener('click',()=>{
+      agentFormDraft.atomToolNames=agentFormDraft.atomToolNames.filter(n=>n!==x.dataset.rid);
+      renderPickedTools();
+    });
+  });
+}
+
+// ============ 选择智能体弹窗 ============
+let pickerAgentTab='mine';
+let pickerTempIds=[];
+function openAgentPicker(){
+  pickerTempIds=[...(agentFormDraft.callableAgentIds||[])];
+  pickerAgentTab='mine';
+  document.querySelectorAll('#capAgentTabs .cap-tab').forEach(t=>t.classList.toggle('active',t.dataset.src==='mine'));
+  $('#capAgentSearch').value='';
+  $('#capAgentMask').classList.add('show');
+  renderAgentPickerList();
+}
+function renderAgentPickerList(){
+  const q=($('#capAgentSearch').value||'').trim().toLowerCase();
+  const src = pickerAgentTab==='mine' ? myAgents : squareAgents;
+  const list=src.filter(a=>!q || a.name.toLowerCase().includes(q) || (a.desc||'').toLowerCase().includes(q) || a.cat.toLowerCase().includes(q));
+  const wrap=$('#capAgentList');
+  wrap.innerHTML=list.length ? list.map(a=>{
+    const checked=pickerTempIds.includes(a.id)?'checked':'';
+    const isMine=pickerAgentTab==='mine';
+    return `<label class="cap-item">
+      <input type="checkbox" ${checked} data-id="${a.id}">
+      <span class="cpi-ic" style="background:${a.iconBg};color:${a.iconColor}">${a.icon}</span>
+      <span class="cpi-info">
+        <span class="cpi-name">${a.name}</span>
+        <span class="cpi-desc">${isMine?('配置 · '+a.cat):('发布者：'+(a.publisher||'')+' · '+a.cat)}</span>
+      </span>
+    </label>`;
+  }).join('') : '<div class="cap-pick-none">没有匹配的智能体</div>';
+  wrap.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+    cb.addEventListener('change',()=>{
+      const id=cb.dataset.id;
+      if(cb.checked && !pickerTempIds.includes(id)) pickerTempIds.push(id);
+      else pickerTempIds=pickerTempIds.filter(x=>x!==id);
+      $('#capAgentCount').textContent='已选 '+pickerTempIds.length+' 项';
+    });
+  });
+  $('#capAgentCount').textContent='已选 '+pickerTempIds.length+' 项';
+}
+function confirmAgentPicker(){
+  agentFormDraft.callableAgentIds=pickerTempIds;
+  $('#capAgentMask').classList.remove('show');
+  renderPickedAgents();
+  toast('已更新智能体配置');
+}
+
+// ============ 选择原子工具弹窗 ============
+let pickerTempTools=[];
+function openToolPicker(){
+  pickerTempTools=[...(agentFormDraft.atomToolNames||[])];
+  $('#capToolSearch').value='';
+  $('#capToolMask').classList.add('show');
+  renderToolPickerList();
+}
+// 已添加且启用的原子工具（复用「原子工具中心」数据源，禁止另造）
+function getEnabledAtomTools(){
+  if(typeof atomTools==='undefined') return [];
+  return atomTools.filter(t=>t.enabled!==false).map(t=>({name:t.name, type:t.type}));
+}
+function renderToolPickerList(){
+  const q=($('#capToolSearch').value||'').trim().toLowerCase();
+  const tools=getEnabledAtomTools().filter(t=>!q || t.name.toLowerCase().includes(q));
+  const wrap=$('#capToolList');
+  wrap.innerHTML=tools.length ? tools.map(t=>{
+    const checked=pickerTempTools.includes(t.name)?'checked':'';
+    const info=getToolIconInfo(t.name);
+    return `<label class="cap-item">
+      <input type="checkbox" ${checked} data-name="${t.name}">
+      <span class="cpi-ic" style="background:${info.bg};color:${info.color}">${info.icon}</span>
+      <span class="cpi-info">
+        <span class="cpi-name">${t.name}</span>
+        <span class="cpi-desc">${info.group} · 已添加</span>
+      </span>
+    </label>`;
+  }).join('') : '<div class="cap-pick-none">没有匹配的原子工具</div>';
+  wrap.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+    cb.addEventListener('change',()=>{
+      const nm=cb.dataset.name;
+      if(cb.checked && !pickerTempTools.includes(nm)) pickerTempTools.push(nm);
+      else pickerTempTools=pickerTempTools.filter(x=>x!==nm);
+      $('#capToolCount').textContent='已选 '+pickerTempTools.length+' 项';
+    });
+  });
+  $('#capToolCount').textContent='已选 '+pickerTempTools.length+' 项';
+}
+function confirmToolPicker(){
+  agentFormDraft.atomToolNames=pickerTempTools;
+  $('#capToolMask').classList.remove('show');
+  renderPickedTools();
+  toast('已更新原子工具配置');
+}
+
+function renderExamples(){
+  const container=$('#aeeExamples');
+  const examples=agentFormDraft.exampleQuestions||[];
+  container.innerHTML=examples.map((q,i)=>`
+    <div class="aee-example-row">
+      <span class="no">${i+1}.</span>
+      <input value="${q}" data-idx="${i}" placeholder="请输入推荐问题">
+      <button class="rm" data-idx="${i}">🗑</button>
+    </div>
+  `).join('');
+  container.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('input',()=>{ agentFormDraft.exampleQuestions[parseInt(inp.dataset.idx)]=inp.value; });
+  });
+  container.querySelectorAll('.rm').forEach(btn=>{
+    btn.addEventListener('click',()=>{ agentFormDraft.exampleQuestions.splice(parseInt(btn.dataset.idx),1); renderExamples(); });
+  });
+}
+
+function bindAgentFormEvents(){
+  // 头像上传
+  $('#aeeAvatarUpload').addEventListener('click',()=>$('#aeeAvatarInput').click());
+  $('#aeeAvatarInput').addEventListener('change',e=>{
+    const file=e.target.files[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onload=ev=>{ agentFormDraft.avatarUrl=ev.target.result; renderAgentForm(); };
+    reader.readAsDataURL(file);
+  });
+
+  // 名称 / 描述字数
+  $('#aeeName').addEventListener('input',e=>{
+    agentFormDraft.name=e.target.value;
+    $('#aeeNameCount').textContent=e.target.value.length+'/100';
+  });
+  $('#aeeDesc').addEventListener('input',e=>{
+    agentFormDraft.desc=e.target.value;
+    $('#aeeDescCount').textContent=e.target.value.length+'/500';
+  });
+
+  // 标签
+  $('#aeeTagInput').addEventListener('keydown',e=>{
+    if(e.key==='Enter'){
+      e.preventDefault();
+      const v=e.target.value.trim();
+      if(!v) return;
+      if(agentFormDraft.tags.length>=10){ toast('最多 10 个标签'); return; }
+      if(v.length>16){ toast('单个标签不超过 16 字符'); return; }
+      if(!agentFormDraft.tags.includes(v)){ agentFormDraft.tags.push(v); renderTags(); }
+      e.target.value='';
+    }
+  });
+
+  // 提示词
+  $('#aeePromptTemplate').addEventListener('change',e=>{ agentFormDraft.promptTemplate=e.target.value; });
+  $('#aeePrompt').addEventListener('input',e=>{ agentFormDraft.prompt=e.target.value; });
+  $('#aeeFullscreenPrompt').addEventListener('click',()=>toast('全屏编辑（演示）'));
+
+  // 对话设置
+  $('#aeeOpening').addEventListener('input',e=>{ agentFormDraft.openingGreeting=e.target.value; });
+  $('#aeeInputPlaceholder').addEventListener('input',e=>{ agentFormDraft.inputPlaceholder=e.target.value; });
+  $('#aeeAddExample').addEventListener('click',()=>{ agentFormDraft.exampleQuestions.push(''); renderExamples(); });
+}
+
+function saveAgentForm(){
+  const a=agentFormDraft;
+  a.name=$('#aeeName').value.trim()||a.name;
+  if(!a.name || a.name==='新建智能体'){ toast('请输入智能体名称'); return; }
+  a.desc=$('#aeeDesc').value.trim();
+  a.promptTemplate=$('#aeePromptTemplate').value;
+  a.prompt=$('#aeePrompt').value;
+  a.openingGreeting=$('#aeeOpening').value;
+  a.inputPlaceholder=$('#aeeInputPlaceholder').value;
+  a.tools=a.atomToolNames.length;
+
+  if(agentFormMode==='create'){
+    myAgents.unshift(a);
+    toast('已创建智能体「'+a.name+'」');
+  }else{
+    const idx=myAgents.findIndex(x=>x.id===a.id);
+    if(idx>=0) myAgents[idx]=a;
+    toast('已保存智能体「'+a.name+'」');
+  }
+
+  // 如果编辑的是当前工作台正在使用的智能体，同步更新信息栏
+  if(currentAgent && currentAgent.id===a.id){
+    currentAgent.name=a.name; currentAgent.icon=a.icon||'🤖'; currentAgent.cat=a.cat; currentAgent.desc=a.desc;
+    $('#aibNameText').textContent=a.name;
+    $('#aibAvatar').textContent=a.icon||'🤖';
+  }
+
+  // 保存成功后自动返回进入编辑页之前的页面（浏览器式历史回退），并刷新目标页数据
+  leaveAgentForm(true);
+}
+function cancelAgentForm(){ agentFormDraft=null; backToAgentCenter(); }
+function backToAgentCenter(){
+  switchPage('agent');
+  // 返回「我的智能体」Tab
+  document.querySelectorAll('.agent-tab').forEach(x=>x.classList.remove('active'));
+  document.querySelector('.agent-tab[data-mod="mine"]').classList.add('active');
+  $('#modMine').classList.add('show');
+  $('#modSquare').classList.remove('show');
+}
+
+// 离开编辑页：回退到进入编辑页之前的页面（浏览器式历史回退）
+// needRefresh=true：保存成功后调用，刷新目标页数据；false：返回按钮调用，仅切换页面
+function leaveAgentForm(needRefresh){
+  agentFormDraft=null;
+  const target=agentEditPrevPage || 'agent';
+  switchPage(target);
+  if(!needRefresh) return;
+  if(target==='agent'){
+    // 回到智能体中心 → 切到「我的智能体」Tab 并刷新列表
+    document.querySelectorAll('.agent-tab').forEach(x=>x.classList.remove('active'));
+    document.querySelector('.agent-tab[data-mod="mine"]').classList.add('active');
+    $('#modMine').classList.add('show');
+    $('#modSquare').classList.remove('show');
+    renderMine($('#mineSearch').value);
+  } else if(target==='agent-detail'){
+    // 回到详情页 → 重新渲染被编辑智能体的详情
+    const d=$('#addBody');
+    if(d && d.dataset.id){
+      const src=myAgents.find(x=>x.id===d.dataset.id);
+      if(src) renderAgentDetailPage(d.dataset.id, d.dataset.source || 'mine');
+    }
+  }
+  // target==='workbench'：若编辑的是当前智能体，信息栏已在 saveAgentForm 内同步，无需额外处理
+}
+
+// 表单页按钮绑定
+// 返回按钮：浏览器式历史回退 → 回到进入编辑页之前的页面
+function backFromAgentForm(){
+  leaveAgentForm(false);
+}
+$('#aeeBackBtn').addEventListener('click',backFromAgentForm);
+$('#aeeCancelBtn').addEventListener('click',cancelAgentForm);
+$('#aeeSaveBtn').addEventListener('click',saveAgentForm);
+
+// ============ 原子工具候选池 ============
 function getCandidateAtomTools(){
   const arr=[];
+  if(typeof toolGroupsData==='undefined') return arr;
   toolGroupsData.forEach(g=>{
     g.tools.forEach(t=>{
       arr.push({name:t.name, icon:t.icon, color:t.color, desc:t.desc, group:g.label});
@@ -197,303 +814,80 @@ function getCandidateAtomTools(){
   });
   return arr;
 }
-// 默认参数模板
-const defaultToolParams={
-  '缓冲区分析':[{key:'distance',value:'500',type:'number',desc:'缓冲距离（米）'},{key:'segments',value:'8',type:'number',desc:'分段数'}],
-  '叠置分析':[{key:'tolerance',value:'0.01',type:'number',desc:'容差'}],
-  '坐标转换':[{key:'targetCRS',value:'CGCS2000',type:'string',desc:'目标坐标系'}],
-  '数据裁剪':[{key:'clipLayer',value:'',type:'string',desc:'裁剪图层名'}],
-  '遥感图斑':[{key:'confidence',value:'0.75',type:'number',desc:'置信度阈值'}],
-  '建筑合规提取':[{key:'minArea',value:'10',type:'number',desc:'最小面积（㎡）'}],
-};
-function getDefaultParams(toolName){
-  return (defaultToolParams[toolName]||[]).map(p=>({...p}));
-}
 
-// 确保 currentAgent 具备编辑页所需结构
+// ============ 兼容旧调用：工作台编辑按钮 ============
 function ensureAgentEditState(){
-  if(!currentAgent.subAgents) currentAgent.subAgents=[];
-  if(!currentAgent.atomTools) currentAgent.atomTools=[];
+  if(!currentAgent) return;
+  if(!currentAgent.callableAgentIds) currentAgent.callableAgentIds=[];
+  if(!currentAgent.atomToolNames) currentAgent.atomToolNames=[];
 }
-
-let agentEditDraft=null;
-function renderAgentEdit(){
-  ensureAgentEditState();
-  // 进入编辑页时打一份草稿，取消可回退
-  agentEditDraft=JSON.parse(JSON.stringify(currentAgent));
-  const a=currentAgent;
-  $('#aeeName').value=a.name||'';
-  $('#aeeIcon').value=a.icon||'🤖';
-  $('#aeeCat').innerHTML=agentCats.filter(c=>c!=='全部').map(c=>`<option ${c===a.cat?'selected':''}>${c}</option>`).join('');
-  $('#aeeDesc').value=a.desc||'';
-  renderSubList();
-  renderToolList();
-}
-
-function renderSubList(){
-  const list=$('#aeeSubList'); const empty=$('#aeeSubEmpty');
-  const subs=currentAgent.subAgents||[];
-  $('#aeeSubCount').textContent=subs.length;
-  empty.classList.toggle('show', subs.length===0);
-  if(subs.length===0){ list.innerHTML=''; return; }
-  list.innerHTML=subs.map((s,i)=>`
-    <div class="aee-item" draggable="true" data-idx="${i}">
-      <span class="aee-drag">⋮⋮</span>
-      <div class="aee-item-ic" style="background:#ECFDF5;color:#10B981">${s.icon||'🧩'}</div>
-      <div class="aee-item-info">
-        <div class="aee-item-name">${s.name}</div>
-        <div class="aee-item-desc">${s.desc||''}</div>
-      </div>
-      <div class="aee-item-actions">
-        <button class="aee-item-btn up" title="上移" data-action="up" data-idx="${i}">↑</button>
-        <button class="aee-item-btn down" title="下移" data-action="down" data-idx="${i}">↓</button>
-        <button class="aee-item-btn" title="移除" data-action="remove" data-idx="${i}">✕</button>
-      </div>
-    </div>
-  `).join('');
-  bindSubListEvents();
-}
-function bindSubListEvents(){
-  const list=$('#aeeSubList');
-  list.querySelectorAll('[data-action]').forEach(btn=>{
-    btn.addEventListener('click',e=>{
-      e.stopPropagation();
-      const idx=parseInt(btn.dataset.idx);
-      if(btn.dataset.action==='up') moveSubAgent(idx,-1);
-      else if(btn.dataset.action==='down') moveSubAgent(idx,1);
-      else if(btn.dataset.action==='remove') removeSubAgent(idx);
-    });
-  });
-  // 拖拽排序
-  let dragIdx=null;
-  list.querySelectorAll('.aee-item').forEach(item=>{
-    item.addEventListener('dragstart',e=>{ dragIdx=parseInt(item.dataset.idx); item.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; });
-    item.addEventListener('dragend',e=>{ item.classList.remove('dragging'); list.querySelectorAll('.aee-item').forEach(x=>x.style.borderBottom=''); });
-    item.addEventListener('dragover',e=>{
-      e.preventDefault();
-      const targetIdx=parseInt(item.dataset.idx);
-      if(targetIdx===dragIdx) return;
-      item.style.borderBottom='2px solid var(--main)';
-    });
-    item.addEventListener('dragleave',e=>{ item.style.borderBottom=''; });
-    item.addEventListener('drop',e=>{
-      e.preventDefault();
-      const targetIdx=parseInt(item.dataset.idx);
-      item.style.borderBottom='';
-      if(dragIdx===null || targetIdx===dragIdx) return;
-      const subs=currentAgent.subAgents;
-      const [moved]=subs.splice(dragIdx,1);
-      subs.splice(targetIdx,0,moved);
-      renderSubList(); toast('已调整顺序');
-    });
-  });
-}
-function moveSubAgent(idx,dir){
-  const subs=currentAgent.subAgents; const newIdx=idx+dir;
-  if(newIdx<0 || newIdx>=subs.length) return;
-  [subs[idx],subs[newIdx]]=[subs[newIdx],subs[idx]];
-  renderSubList();
-}
-function removeSubAgent(idx){
-  const s=currentAgent.subAgents[idx]; if(!s) return;
-  currentAgent.subAgents.splice(idx,1); renderSubList(); toast(`已移除「${s.name}」`);
-}
-function addSubAgent(id){
-  const c=candidateSubAgents.find(x=>x.id===id); if(!c) return;
-  currentAgent.subAgents.push({...c}); renderSubList(); toast(`已添加「${c.name}」`);
-}
-function openSubPicker(){
-  const used=new Set((currentAgent.subAgents||[]).map(s=>s.id));
-  const items=candidateSubAgents.filter(c=>!used.has(c.id));
-  openPicker({
-    title:'添加子智能体',
-    items:items.map(c=>({id:c.id,name:c.name,desc:c.desc,icon:c.icon,iconBg:'#ECFDF5',iconColor:'#10B981'})),
-    onSelect:id=>addSubAgent(id)
-  });
-}
-
-function renderToolList(){
-  const list=$('#aeeToolList'); const empty=$('#aeeToolEmpty');
-  const tools=currentAgent.atomTools||[];
-  $('#aeeToolCount').textContent=tools.length;
-  empty.classList.toggle('show', tools.length===0);
-  if(tools.length===0){ list.innerHTML=''; return; }
-  list.innerHTML=tools.map((t,i)=>{
-    const colorMap={purple:['#F5F3FF','#8B5CF6'],blue:['#EFF6FF','#0EA5E9'],green:['#ECFDF5','#10B981'],amber:['#FFFBEB','#F59E0B']};
-    const [bg,color]=colorMap[t.color]||['#F8FAFC','#64748B'];
-    const params=(t.params||[]).map((p,j)=>`
-      <div class="aee-param">
-        <input placeholder="参数名" value="${p.key}" data-field="key" data-ti="${i}" data-pi="${j}" />
-        <select data-field="type" data-ti="${i}" data-pi="${j}">
-          <option value="string" ${p.type==='string'?'selected':''}>字符串</option>
-          <option value="number" ${p.type==='number'?'selected':''}>数字</option>
-          <option value="boolean" ${p.type==='boolean'?'selected':''}>布尔</option>
-        </select>
-        <input placeholder="参数值" value="${p.value}" data-field="value" data-ti="${i}" data-pi="${j}" />
-        <button class="aee-param-rm" data-action="rm-param" data-ti="${i}" data-pi="${j}" title="删除参数">✕</button>
-      </div>
-    `).join('');
-    return `
-    <div class="aee-tool" data-idx="${i}">
-      <div class="aee-tool-head">
-        <div class="aee-tool-ic" style="background:${bg};color:${color}">${t.icon||'🔧'}</div>
-        <div class="aee-tool-info">
-          <div class="aee-tool-name">${t.name}</div>
-          <div class="aee-tool-desc">${t.desc||''}</div>
-        </div>
-        <button class="aee-tool-rm" data-action="rm-tool" data-idx="${i}" title="移除工具">✕</button>
-      </div>
-      <div class="aee-params-title">参数配置</div>
-      <div class="aee-params">${params}</div>
-      <button class="aee-add-param" data-action="add-param" data-idx="${i}">＋ 添加参数</button>
-    </div>`;
-  }).join('');
-  bindToolListEvents();
-}
-function bindToolListEvents(){
-  const list=$('#aeeToolList');
-  list.querySelectorAll('[data-action]').forEach(btn=>{
-    btn.addEventListener('click',e=>{
-      e.stopPropagation();
-      if(btn.dataset.action==='rm-tool') removeAtomTool(parseInt(btn.dataset.idx));
-      else if(btn.dataset.action==='add-param') addToolParam(parseInt(btn.dataset.idx));
-      else if(btn.dataset.action==='rm-param') removeToolParam(parseInt(btn.dataset.ti),parseInt(btn.dataset.pi));
-    });
-  });
-  list.querySelectorAll('.aee-param input, .aee-param select').forEach(el=>{
-    el.addEventListener('input',e=>{
-      const ti=parseInt(el.dataset.ti); const pi=parseInt(el.dataset.pi);
-      const field=el.dataset.field;
-      updateToolParam(ti,pi,field,el.value);
-    });
-  });
-}
-function addAtomTool(toolName){
-  const pool=getCandidateAtomTools();
-  const t=pool.find(x=>x.name===toolName); if(!t) return;
-  currentAgent.atomTools.push({
-    name:t.name, icon:t.icon, color:t.color, desc:t.desc,
-    params:getDefaultParams(t.name)
-  });
-  renderToolList(); toast(`已添加「${t.name}」`);
-}
-function removeAtomTool(idx){
-  const t=currentAgent.atomTools[idx]; if(!t) return;
-  currentAgent.atomTools.splice(idx,1); renderToolList(); toast(`已移除「${t.name}」`);
-}
-function addToolParam(toolIdx){
-  const t=currentAgent.atomTools[toolIdx]; if(!t) return;
-  if(!t.params) t.params=[];
-  t.params.push({key:'',value:'',type:'string',desc:''});
-  renderToolList();
-}
-function removeToolParam(toolIdx,paramIdx){
-  const t=currentAgent.atomTools[toolIdx]; if(!t||!t.params) return;
-  t.params.splice(paramIdx,1); renderToolList();
-}
-function updateToolParam(toolIdx,paramIdx,field,value){
-  const t=currentAgent.atomTools[toolIdx]; if(!t||!t.params) return;
-  t.params[paramIdx][field]=value;
-}
-function openToolPicker(){
-  const used=new Set((currentAgent.atomTools||[]).map(t=>t.name));
-  const items=getCandidateAtomTools().filter(t=>!used.has(t.name));
-  openPicker({
-    title:'添加原子工具',
-    items:items.map(t=>{
-      const colorMap={purple:['#F5F3FF','#8B5CF6'],blue:['#EFF6FF','#0EA5E9'],green:['#ECFDF5','#10B981'],amber:['#FFFBEB','#F59E0B']};
-      const [bg,color]=colorMap[t.color]||['#F8FAFC','#64748B'];
-      return {id:t.name,name:t.name,desc:t.desc+' · '+t.group,icon:t.icon,iconBg:bg,iconColor:color};
-    }),
-    onSelect:id=>addAtomTool(id)
-  });
-}
-
-// 通用选择弹窗
-function openPicker({title,items,onSelect}){
-  const mask=document.createElement('div'); mask.className='aee-picker-mask';
-  const searchId='aeePickerSearch_'+Date.now();
-  mask.innerHTML=`
-    <div class="aee-picker">
-      <div class="aee-picker-head"><h3>${title}</h3><button class="aee-picker-close">✕</button></div>
-      <div class="aee-picker-search"><input id="${searchId}" placeholder="搜索…" /></div>
-      <div class="aee-picker-body"></div>
-      <div class="aee-picker-foot"><button class="aee-btn ghost picker-cancel">取消</button></div>
-    </div>`;
-  document.body.appendChild(mask);
-  const body=mask.querySelector('.aee-picker-body');
-  function render(filter=''){
-    const q=filter.trim().toLowerCase();
-    const list=items.filter(it=>!q || it.name.toLowerCase().includes(q) || (it.desc||'').toLowerCase().includes(q));
-    body.innerHTML=list.length
-      ? list.map(it=>`
-        <div class="aee-picker-item" data-id="${it.id}">
-          <div class="pi-ic" style="background:${it.iconBg};color:${it.iconColor}">${it.icon}</div>
-          <div class="pi-info"><div class="pi-name">${it.name}</div><div class="pi-desc">${it.desc||''}</div></div>
-        </div>`).join('')
-      : '<div class="empty-tip">无匹配项</div>';
-    body.querySelectorAll('.aee-picker-item').forEach(el=>{
-      el.addEventListener('click',()=>{ onSelect(el.dataset.id); close(); });
-    });
-  }
-  function close(){ mask.classList.remove('show'); setTimeout(()=>mask.remove(),180); }
-  mask.querySelector('.aee-picker-close').addEventListener('click',close);
-  mask.querySelector('.picker-cancel').addEventListener('click',close);
-  mask.addEventListener('click',e=>{ if(e.target===mask) close(); });
-  $('#'+searchId).addEventListener('input',e=>render(e.target.value));
-  render();
-  requestAnimationFrame(()=>mask.classList.add('show'));
-}
-
-// 保存 / 取消 / 返回
-function saveAgentEdit(){
-  const a=currentAgent;
-  a.name=$('#aeeName').value.trim()||a.name;
-  a.icon=$('#aeeIcon').value.trim()||a.icon;
-  a.cat=$('#aeeCat').value;
-  a.desc=$('#aeeDesc').value.trim()||a.desc;
-  a.tools=(a.atomTools||[]).length;
-  // 同步到工作台的展示
-  $('#aibNameText').textContent=a.name;
-  $('#aibAvatar').textContent=a.icon;
-  // 如果当前智能体在 switchData.mine 中，也同步一份
-  const sa=switchData.mine.find(x=>x.id===a.id);
-  if(sa){ sa.name=a.name; sa.icon=a.icon; sa.cat=a.cat; sa.desc=a.desc; sa.tools=a.tools; }
-  backToWorkbench(); toast('已保存智能体配置');
-}
-function cancelAgentEdit(){
-  if(agentEditDraft){
-    Object.assign(currentAgent,JSON.parse(JSON.stringify(agentEditDraft)));
-    agentEditDraft=null;
-  }
-  backToWorkbench();
-}
-function backToWorkbench(){ switchPage('workbench'); }
-
-// 绑定编辑页事件
-$('#aeeBackBtn').addEventListener('click',cancelAgentEdit);
-$('#aeeCancelBtn').addEventListener('click',cancelAgentEdit);
-$('#aeeSaveBtn').addEventListener('click',saveAgentEdit);
-$('#aeeAddSubBtn').addEventListener('click',openSubPicker);
-$('#aeeAddToolBtn').addEventListener('click',openToolPicker);
-
-// 初始化默认当前智能体的子智能体/原子工具（仅针对默认助手 zhidi）
 function initCurrentAgentConfig(){
-  ensureAgentEditState();
-  if(currentAgent.id!=='zhidi') return;
-  if(currentAgent.subAgents.length===0){
-    currentAgent.subAgents=[
-      {...candidateSubAgents[0]},{...candidateSubAgents[2]}
-    ];
-  }
-  if(currentAgent.atomTools.length===0){
-    currentAgent.atomTools=[
-      {name:'缓冲区分析',icon:'🎯',color:'blue',desc:'为点、线、面要素创建指定距离的缓冲区',params:getDefaultParams('缓冲区分析')},
-      {name:'遥感图斑',icon:'🛰️',color:'purple',desc:'自动识别遥感影像中的地物图斑',params:getDefaultParams('遥感图斑')},
-      {name:'坐标转换',icon:'🔄',color:'green',desc:'支持主流坐标系互转',params:getDefaultParams('坐标转换')},
-    ];
-    currentAgent.tools=currentAgent.atomTools.length;
-  }
+  // 默认助手 zhidi 无需在 agents.js 中维护复杂配置，保留函数签名即可
 }
-initCurrentAgentConfig();
 
+// 智能体卡片事件委托：按钮区执行操作，空白区进入详情
+function handleAgentCardClick(e){
+  const card = e.target.closest('.agent-card'); if(!card) return;
+  const id = card.dataset.id, source = card.dataset.source;
+  const btn = e.target.closest('[data-act]');
+  if(btn){
+    const act = btn.dataset.act;
+    if(act==='edit') editAgent(id);
+    else if(act==='publish') togglePublish(id);
+    else if(act==='use') useAgent(id);
+    else if(act==='del') deleteAgent(id);
+    else if(act==='use-square') useSquare(id);
+    else if(act==='detail') openAgentDetailPage(id, source);
+    else if(act==='unfav') unfavoriteAgent(id);
+    return;
+  }
+  openAgentDetailPage(id, source);
+}
+$('#mineCreatedGrid').addEventListener('click', handleAgentCardClick);
+$('#mineFavoriteGrid').addEventListener('click', handleAgentCardClick);
+$('#squareGrid').addEventListener('click', handleAgentCardClick);
+
+// 详情页返回智能体中心
+$('#addBackBtn').addEventListener('click', ()=> switchPage('agent'));
+
+// 我的智能体空状态链接：去广场 / 新建智能体
+document.addEventListener('click', e=>{
+  if(e.target && e.target.id==='goSquareLink'){
+    document.querySelectorAll('.agent-tab').forEach(x=>x.classList.remove('active'));
+    document.querySelector('.agent-tab[data-mod="square"]').classList.add('active');
+    $('#modMine').classList.remove('show'); $('#modSquare').classList.add('show');
+  } else if(e.target && e.target.id==='goCreateAgent'){
+    openAgentForm('create');
+  }
+});
+
+// ============ 能力配置弹窗交互绑定 ============
+$('#aeePickAgentsBtn').addEventListener('click', openAgentPicker);
+$('#aeePickToolsBtn').addEventListener('click', openToolPicker);
+document.querySelectorAll('#capAgentTabs .cap-tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    pickerAgentTab=t.dataset.src;
+    document.querySelectorAll('#capAgentTabs .cap-tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    $('#capAgentSearch').value='';
+    renderAgentPickerList();
+  });
+});
+$('#capAgentSearch').addEventListener('input', renderAgentPickerList);
+$('#capToolSearch').addEventListener('input', renderToolPickerList);
+$('#capAgentConfirm').addEventListener('click', confirmAgentPicker);
+$('#capToolConfirm').addEventListener('click', confirmToolPicker);
+// 关闭（取消不保存）
+document.querySelectorAll('.aee-picker-mask [data-close]').forEach(el=>{
+  el.addEventListener('click',()=>el.closest('.aee-picker-mask').classList.remove('show'));
+});
+document.querySelectorAll('.aee-picker-mask').forEach(m=>{
+  m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('show'); });
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){ $('#capAgentMask').classList.remove('show'); $('#capToolMask').classList.remove('show'); }
+});
+
+// 初始化渲染
+renderMine();
+renderSquare();

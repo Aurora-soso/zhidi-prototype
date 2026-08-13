@@ -25,11 +25,43 @@ function aiReply(q){
 }
 function send(){
   const v=$('#chatText').value.trim(); if(!v) return;
-  addBubble('user',v); $('#chatText').value='';
+  const ref = chatFileRefName ? '📎 引用文件：'+chatFileRefName+'\n' : '';
+  addBubble('user', ref+v); $('#chatText').value='';
   qcActiveLabel=null; renderQcTag(); renderQcSubtasks();   // 发送后解绑快捷指令
   aiReply(v);
 }
 sendBtn.addEventListener('click',send);
+
+// ============ 文件引用标签（知识库 / 预览弹窗「添加到对话」联动） ============
+const CHAT_FILE_REF_KEY = 'zhidi.chatFileRef';   // 持久化：刷新 / 会话切换后仍有效
+let chatFileRefName = '';   // 当前对话上下文引用的文件
+function setChatFileRef(name){
+  chatFileRefName = name || '';
+  try{
+    if(chatFileRefName) localStorage.setItem(CHAT_FILE_REF_KEY, chatFileRefName);
+    else localStorage.removeItem(CHAT_FILE_REF_KEY);
+  }catch(e){ /* localStorage 不可用时仅保留内存态 */ }
+  const tag = $('#fileRefTag');
+  if(!tag) return;
+  if(chatFileRefName){
+    tag.style.display = 'inline-flex';
+    tag.querySelector('.qc-tag-name').textContent = '📎 '+chatFileRefName;
+  } else {
+    tag.style.display = 'none';
+    tag.querySelector('.qc-tag-name').textContent = '';
+  }
+}
+window.setChatFileRef = setChatFileRef;
+$('#fileRefTag').querySelector('.qc-tag-x').addEventListener('click', ()=> setChatFileRef(''));
+// 从 localStorage 恢复上次会话的文件引用（刷新后依然有效）
+function restoreChatFileRef(){
+  try{
+    const saved = localStorage.getItem(CHAT_FILE_REF_KEY);
+    if(saved) setChatFileRef(saved);
+  }catch(e){}
+}
+window.restoreChatFileRef = restoreChatFileRef;
+restoreChatFileRef();
 $('#chatText').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); send(); } });
 stopBtn.addEventListener('click',()=>{ stopped=true; });
 $('#chNew').addEventListener('click',()=>{ chatBody.innerHTML='<div class="bubble ai"><div class="av">AI</div><div class="txt">已开启新对话，有什么可以帮你的？</div></div>'; toast('新建对话'); });
@@ -122,14 +154,12 @@ function applyQuickCommand(label){
   renderQcTag(); renderQuickCommands();
 }
 function renderQcTag(){
-  const tag=$('#qcTag'), box=document.querySelector('#chatInput .box');
+  const tag=$('#qcTag');
   if(qcActiveLabel){
     tag.style.display='inline-flex';
     tag.querySelector('.qc-tag-name').textContent='@'+qcActiveLabel;   // 动作A：@标签名
-    box.classList.add('has-tag');
   }else{
     tag.style.display='none';
-    box.classList.remove('has-tag');
   }
 }
 // 移除 Tag：因 Tag 与模板为一对一绑定，移除时同步清空 textarea（逻辑明确、可预测）
@@ -198,6 +228,7 @@ function loadSwitchMore(module){
     st.page++; st.hasMore = st.page * SWITCH_PAGE < data.length; st.loading = false;
     foot.innerHTML = st.hasMore ? '<span class="sw-hint">下拉加载更多</span>' : '<span class="sw-nomore">— 没有更多了 —</span>';
     markSwitchSelected();
+    if($('#asMask').classList.contains('show')) positionSwitchPop();
   }, 550);
 }
 function bindSwitchItems(list){
@@ -232,29 +263,7 @@ function openSwitchPopup(){
 // 浮层定位：默认在按钮左上方弹出（浮层右下角贴按钮左上角）
 // 左侧空间不足 → 水平贴近按钮左缘；上方空间不足 → 移到按钮下方并翻转箭头
 function positionSwitchPop(){
-  const btn=$('#aibSwitchBtn'), pop=$('#asPop');
-  const r=btn.getBoundingClientRect();
-  const vw=window.innerWidth, vh=window.innerHeight;
-  // 同一帧内隐藏测量实际尺寸，避免闪烁
-  pop.style.visibility='hidden';
-  const popW=pop.offsetWidth, popH=pop.offsetHeight;
-  pop.style.visibility='';
-  // 水平：优先浮层右边缘贴按钮左边缘；左侧不够则贴近按钮左缘并兜底视口边界
-  let left;
-  if(r.left - popW - 10 >= 8) left = r.left - popW - 10;
-  else left = Math.min(Math.max(8, r.left), Math.max(8, vw - popW - 8));
-  pop.style.left = left + 'px';
-  // 垂直：优先浮层底部贴按钮顶部（左上侧）；上方空间不足则移到按钮下方
-  // 无论哪种方向都钳制在视口内（矮窗口下浮层底部不溢出）
-  pop.classList.remove('pop-above','pop-below');
-  const clampY = y => Math.max(8, Math.min(y, vh - popH - 8));
-  if(r.top - popH - 10 >= 8){
-    pop.style.top = clampY(r.top - popH - 10) + 'px';
-    pop.classList.add('pop-above');
-  }else{
-    pop.style.top = clampY(r.bottom + 10) + 'px';
-    pop.classList.add('pop-below');
-  }
+  positionAnchoredPopover($('#aibSwitchBtn'),$('#asPop'),'above');
 }
 function closeSwitchPopup(){ $('#asMask').classList.remove('show'); }
 $('#asClose').addEventListener('click', closeSwitchPopup);
@@ -269,6 +278,7 @@ document.querySelectorAll('.sp-tab').forEach(tab=>{
     tab.classList.add('active');
     const m = tab.dataset.mod;
     document.querySelectorAll('.sp-panel').forEach(p=>p.classList.toggle('show', p.dataset.mod===m));
+    if($('#asMask').classList.contains('show')) positionSwitchPop();
   });
 });
 // 两个模块的无限滚动独立绑定
@@ -342,11 +352,13 @@ $('#modelAuto').addEventListener('change', e=>{
   updateCiModelLabel(); renderModelOfficial(); renderModelCustom();
   if(modelAuto) toast('已开启 Auto 模式，将自动选择最优模型');
 });
-function openModelPopup(){ renderModelOfficial(); renderModelCustom(); $('#modelMask').classList.add('show'); }
+function positionModelPopup(){ positionAnchoredPopover($('#ciModel'),$('#modelPop'),'above'); }
+function openModelPopup(){ renderModelOfficial(); renderModelCustom(); $('#modelMask').classList.add('show'); requestAnimationFrame(positionModelPopup); }
 function closeModelPopup(){ $('#modelMask').classList.remove('show'); }
 $('#ciModel').addEventListener('click', openModelPopup);
 $('#modelClose').addEventListener('click', closeModelPopup);
 $('#modelMask').addEventListener('click', e=>{ if(e.target.id==='modelMask') closeModelPopup(); });
+window.addEventListener('resize',()=>{if($('#modelMask').classList.contains('show'))positionModelPopup();});
 
 // 模块三：添加自定义模型（跳转独立配置页）
 $('#modelConfigBtn').addEventListener('click', ()=>{ closeModelPopup(); switchPage('model-config'); });

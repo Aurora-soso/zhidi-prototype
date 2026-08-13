@@ -9,13 +9,14 @@
     river:()=>L.polyline([[23.172,113.216],[23.148,113.252],[23.123,113.285],[23.094,113.322]],{color:'#0EA5E9',weight:8,opacity:.7}),
     landuse:()=>L.polygon([[23.177,113.266],[23.164,113.315],[23.126,113.326],[23.111,113.283],[23.135,113.255]],{color:'#10B981',weight:2,fillColor:'#34D399',fillOpacity:.22})
   };
+  function positionSelect(){positionAnchoredPopover(button,mask.querySelector('.vector-select-modal'),'auto');}
   function close(){mask.classList.remove('show');}
   function updateCount(){$('#vectorSelectedCount').textContent=selectList.querySelectorAll('input:checked').length;}
   function open(){
     if(!window.GISWorkspace?.isReady()){toast('请先选择本地工作空间');return;}
     $('#vectorWorkspacePath').textContent=window.GISWorkspace.getPath();
     selectList.innerHTML=window.GISWorkspace.getVectorLayers().map((layer,index)=>`<label class="vector-select-row"><span><input type="checkbox" value="${layer.id}" ${layer.loaded||index<2?'checked':''}></span><span class="vector-file-name">${layer.fileName}</span><span class="vector-file-type">${layer.type}</span></label>`).join('');
-    updateCount();mask.classList.add('show');
+    updateCount();mask.classList.add('show');requestAnimationFrame(positionSelect);
   }
   function renderPanel(){
     const loaded=window.GISWorkspace.getVectorLayers().filter(layer=>layer.loaded);
@@ -38,6 +39,7 @@
   button.addEventListener('click',open);selectList.addEventListener('change',updateCount);
   $('#vectorSelectClose').addEventListener('click',close);$('#vectorSelectCancel').addEventListener('click',close);$('#vectorLoadConfirm').addEventListener('click',load);
   mask.addEventListener('click',event=>{if(event.target===mask)close();});
+  window.addEventListener('resize',()=>{if(mask.classList.contains('show'))positionSelect();});
   layerList.addEventListener('change',event=>{
     const input=event.target.closest('[data-layer-id]');if(!input)return;
     const layer=window.GISWorkspace.getVectorLayers().find(item=>item.id===input.dataset.layerId),visual=leafletLayers.get(input.dataset.layerId);
