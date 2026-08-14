@@ -1,0 +1,1124 @@
+/* ============ 制图智能体专用样式 ============ */
+
+/* ── 制图模式工具栏（复用 map-stage-tools 基础样式） ──── */
+.map-carto-toolbar {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  max-width: calc(100% - 86px);
+  padding: 4px;
+  background: rgba(255, 255, 255, .96);
+  border: 1px solid rgba(148, 163, 184, .24);
+  border-radius: 11px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .12);
+  backdrop-filter: blur(10px);
+}
+.map-carto-toolbar[hidden] { display: none !important; }
+
+/* 制图模式摘要区 */
+.map-carto-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: 8px;
+  margin-right: 4px;
+  border-right: 1px solid #E2E8F0;
+}
+.map-carto-summary span:first-child { font-size: 15px; }
+.map-carto-summary b {
+  font-size: 12px;
+  color: #0F172A;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.map-carto-summary small { font-size: 10px; color: #64748B; }
+.map-carto-summary em {
+  font-size: 9.5px;
+  color: #10B981;
+  background: #ECFDF5;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-style: normal;
+}
+
+/* 标注菜单分隔线 + 危险操作按钮 */
+.map-menu-divider {
+  height: 1px;
+  margin: 4px 2px;
+  background: #F1F5F9;
+}
+.map-tool-menu button.map-menu-danger {
+  color: #DC2626;
+  font-weight: 500;
+}
+.map-tool-menu button.map-menu-danger:hover {
+  background: #FEF2F2;
+  color: #B91C1C;
+}
+
+/* 分隔线 */
+.map-tool-divider {
+  width: 1px;
+  height: 22px;
+  background: #E2E8F0;
+  margin: 0 4px;
+}
+
+/* 按钮继承 map-stage-tools 基础样式 */
+.map-carto-toolbar button {
+  height: 32px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #64748B;
+  font: 11.5px inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.map-carto-toolbar button:hover { background: #F1F5F9; color: #0F172A; }
+.map-carto-toolbar button.active { background: #ECFDF5; color: #059669; font-weight: 600; }
+.map-carto-toolbar button:disabled { opacity: .38; cursor: not-allowed; }
+
+/* 主操作按钮：模板前「确认」→ 模板后「导出」，同一绿色主色 */
+.map-carto-toolbar button[data-carto-tool="confirm"],
+.map-carto-toolbar button[data-carto-tool="export"] {
+  background: linear-gradient(135deg, #10B981, #059669);
+  color: #fff;
+  font-weight: 600;
+  padding: 0 20px;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, .35);
+}
+.map-carto-toolbar button[data-carto-tool="confirm"]:hover,
+.map-carto-toolbar button[data-carto-tool="export"]:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+  color: #fff;
+}
+
+/* ── 制图进度气泡 ──────────────────────────────── */
+.carto-progress-message .carto-status {
+  margin-top: 6px;
+}
+.carto-progress-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #0F172A;
+  margin-bottom: 8px;
+}
+.carto-status-step {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 0;
+  font-size: 12px;
+  color: #94A3B8;
+  transition: color .25s;
+}
+.carto-status-step.done { color: #059669; }
+.carto-status-step.running { color: #0EA5E9; font-weight: 600; }
+.step-mark { font-size: 13px; width: 18px; text-align: center; }
+
+/* ── 制图结果卡片 ──────────────────────────────── */
+.carto-result-card {
+  margin-top: 10px;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 12px;
+  background: linear-gradient(135deg, #F8FAFC, #F1F5F9);
+}
+.carto-result-card-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.carto-result-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #10B981, #059669);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+}
+.carto-result-card-info { flex: 1; }
+.carto-result-card-info b { display: block; font-size: 13px; color: #0F172A; }
+.carto-result-card-info small { color: #64748B; font-size: 11px; }
+.carto-result-meta {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.carto-result-meta span {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #F1F5F9;
+  color: #475569;
+}
+.carto-result-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+.carto-result-actions button {
+  flex: 1;
+  height: 32px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  background: white;
+  color: #334155;
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.carto-result-actions button:hover {
+  border-color: #10B981;
+  color: #059669;
+  background: #ECFDF5;
+}
+
+/* ── 图层说明提示 ──────────────────────────────── */
+.carto-layer-note {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-radius: 8px;
+  font-size: 11.5px;
+  color: #1E40AF;
+  line-height: 1.55;
+}
+.carto-layer-note strong { color: #1E3A8A; }
+
+/* ── 统计摘要表格 ──────────────────────────────── */
+.carto-stats-table {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+  font-size: 11.5px;
+}
+.carto-stats-table th,
+.carto-stats-table td {
+  padding: 5px 8px;
+  text-align: left;
+  border-bottom: 1px solid #F1F5F9;
+}
+.carto-stats-table th {
+  font-weight: 600;
+  color: #475569;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+.carto-stats-table td { color: #334155; }
+.carto-stats-table tr:last-child td { border-bottom: none; }
+.carto-stats-color-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  vertical-align: middle;
+  margin-right: 4px;
+  border: 1px solid rgba(0,0,0,.1);
+}
+
+/* ── 模板选择器弹窗 ────────────────────────────── */
+.carto-template-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 800;
+  background: rgba(15, 23, 42, .45);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.carto-template-mask.show { display: flex; }
+
+.carto-template-modal {
+  width: 520px;
+  max-height: 70vh;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, .22);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.carto-template-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #F1F5F9;
+}
+.carto-template-head h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0F172A;
+  margin: 0;
+}
+.carto-template-close {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #94A3B8;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.carto-template-close:hover { background: #F1F5F9; color: #475569; }
+
+.carto-template-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+.carto-template-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.carto-template-item {
+  border: 2px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all .2s;
+  text-align: center;
+}
+.carto-template-item:hover {
+  border-color: #93C5FD;
+  background: #F8FAFC;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .06);
+}
+.carto-template-item.selected {
+  border-color: #3B82F6;
+  background: #EFF6FF;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, .15);
+}
+.carto-template-thumb {
+  font-size: 40px;
+  margin-bottom: 8px;
+}
+.carto-template-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0F172A;
+  margin-bottom: 4px;
+}
+.carto-template-desc {
+  font-size: 10.5px;
+  color: #64748B;
+  line-height: 1.45;
+}
+
+.carto-template-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid #F1F5F9;
+}
+.carto-template-foot button {
+  height: 34px;
+  padding: 0 18px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+}
+.carto-template-cancel {
+  border: 1px solid #E2E8F0;
+  background: white;
+  color: #64748B;
+}
+.carto-template-cancel:hover { background: #F8FAFC; }
+.carto-template-confirm {
+  border: 1px solid #10B981;
+  background: #10B981;
+  color: white;
+}
+.carto-template-confirm:hover { background: #059669; border-color: #059669; }
+
+/* ── 导出面板 ───────────────────────────────────── */
+.carto-export-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 800;
+  background: rgba(15, 23, 42, .45);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.carto-export-mask.show { display: flex; }
+
+.carto-export-modal {
+  width: 420px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, .22);
+  overflow: hidden;
+}
+.carto-export-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #F1F5F9;
+}
+.carto-export-head h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0F172A;
+  margin: 0;
+}
+
+.carto-export-body { padding: 20px; }
+
+.carto-export-format {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.carto-format-option {
+  flex: 1;
+  border: 2px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 16px 12px;
+  cursor: pointer;
+  text-align: center;
+  transition: all .2s;
+}
+.carto-format-option:hover { border-color: #93C5FD; }
+.carto-format-option.selected { border-color: #3B82F6; background: #EFF6FF; }
+.carto-format-icon { font-size: 28px; margin-bottom: 6px; }
+.carto-format-name { font-size: 13px; font-weight: 600; color: #0F172A; }
+.carto-format-desc { font-size: 10px; color: #64748B; margin-top: 2px; }
+
+.carto-export-options label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 6px;
+}
+.carto-export-options select,
+.carto-export-options input[type="number"] {
+  width: 100%;
+  height: 34px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 12px;
+  color: #334155;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+.carto-export-options select:focus,
+.carto-export-options input:focus {
+  outline: none;
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, .12);
+}
+
+.carto-export-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid #F1F5F9;
+}
+.carto-export-foot button {
+  height: 34px;
+  padding: 0 20px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.carto-export-cancel {
+  border: 1px solid #E2E8F0;
+  background: white;
+  color: #64748B;
+}
+.carto-export-download {
+  border: 1px solid #10B981;
+  background: #10B981;
+  color: white;
+}
+.carto-export-download:hover { background: #059669; }
+
+/* ── 模板 SVG 元素样式（可点选，选中后可让智能体修改） ── */
+.carto-template-element {
+  pointer-events: auto;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity .15s;
+}
+.carto-template-element:hover {
+  opacity: .72;
+}
+.carto-template-element.template-selected {
+  opacity: 1;
+  cursor: move;
+  filter: drop-shadow(0 0 5px rgba(59, 130, 246, .85));
+}
+.carto-template-element.template-dragging {
+  opacity: .85;
+  cursor: grabbing;
+  filter: drop-shadow(0 0 8px rgba(16, 185, 129, .9));
+}
+.carto-template-legend rect[fill="rgba(255,255,255,.88)"] {
+  pointer-events: auto;
+}
+.carto-legend-item { cursor: default; }
+
+/* ── 对话内：模板来源选择卡片 ──────────────────── */
+.carto-template-prompt {
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 14px;
+  background: linear-gradient(135deg, #F8FAFC, #F1F5F9);
+}
+.carto-prompt-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0F172A;
+  margin-bottom: 6px;
+}
+.carto-prompt-desc {
+  font-size: 12px;
+  color: #475569;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+.carto-source-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.carto-source-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+  background: white;
+  cursor: pointer;
+  text-align: left;
+  transition: all .18s;
+  width: 100%;
+}
+.carto-source-option:hover {
+  border-color: #10B981;
+  background: #F0FDF4;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, .12);
+}
+.carto-source-icon {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: #ECFDF5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+.carto-source-text { flex: 1; }
+.carto-source-text b {
+  display: block;
+  font-size: 12.5px;
+  color: #0F172A;
+  margin-bottom: 2px;
+}
+.carto-source-text small {
+  font-size: 10.5px;
+  color: #64748B;
+  line-height: 1.4;
+  display: block;
+}
+.carto-source-arrow {
+  color: #CBD5E1;
+  font-size: 18px;
+}
+.carto-prompt-hint {
+  margin-top: 10px;
+  font-size: 10.5px;
+  color: #94A3B8;
+  text-align: center;
+}
+
+/* ── 官方模板库：工具栏（搜索 + 分类筛选） ──────── */
+.carto-lib-count {
+  font-size: 10.5px;
+  color: #94A3B8;
+  font-weight: 500;
+  margin-left: 4px;
+}
+.carto-template-toolbar {
+  padding: 0 20px 12px;
+  border-bottom: 1px solid #F1F5F9;
+}
+.carto-lib-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid #E2E8F0;
+  border-radius: 9px;
+  background: #F8FAFC;
+  transition: all .15s;
+}
+.carto-lib-search:focus-within {
+  border-color: #3B82F6;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, .12);
+}
+.carto-lib-search-icon { font-size: 13px; }
+.carto-lib-search input {
+  flex: 1;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-size: 12.5px;
+  color: #334155;
+}
+.carto-lib-search input::placeholder { color: #94A3B8; }
+.carto-cat-filters {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.carto-cat-filter {
+  height: 26px;
+  padding: 0 12px;
+  border: 1px solid #E2E8F0;
+  border-radius: 13px;
+  background: white;
+  font-size: 11px;
+  color: #64748B;
+  cursor: pointer;
+  transition: all .15s;
+}
+.carto-cat-filter:hover { border-color: #93C5FD; color: #2563EB; }
+.carto-cat-filter.active {
+  background: #3B82F6;
+  border-color: #3B82F6;
+  color: white;
+  font-weight: 600;
+}
+.carto-template-cat {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: #F1F5F9;
+  color: #64748B;
+  font-size: 9px;
+  font-weight: 500;
+  vertical-align: 1px;
+}
+.carto-lib-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px 0;
+  color: #94A3B8;
+  font-size: 12.5px;
+}
+
+/* ── 上传 / 指定本地路径面板 ───────────────────── */
+.carto-upload-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 800;
+  background: rgba(15, 23, 42, .45);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.carto-upload-mask.show { display: flex; }
+.carto-upload-modal {
+  width: 460px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, .22);
+  overflow: hidden;
+}
+.carto-upload-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #F1F5F9;
+}
+.carto-upload-head h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0F172A;
+  margin: 0;
+}
+.carto-upload-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 12px 20px 0;
+}
+.carto-upload-tab {
+  height: 32px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 8px 8px 0 0;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  color: #94A3B8;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all .15s;
+}
+.carto-upload-tab:hover { color: #475569; }
+.carto-upload-tab.active {
+  color: #059669;
+  border-bottom-color: #10B981;
+  background: #F0FDF4;
+}
+.carto-upload-body {
+  padding: 16px 20px 20px;
+  min-height: 150px;
+}
+.carto-dropzone {
+  border: 2px dashed #CBD5E1;
+  border-radius: 12px;
+  padding: 30px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+  background: #F8FAFC;
+}
+.carto-dropzone:hover,
+.carto-dropzone.dragover {
+  border-color: #10B981;
+  background: #F0FDF4;
+}
+.carto-dropzone-icon { font-size: 32px; margin-bottom: 8px; }
+.carto-dropzone-text b {
+  display: block;
+  font-size: 13px;
+  color: #334155;
+  margin-bottom: 4px;
+}
+.carto-dropzone-text small {
+  font-size: 10.5px;
+  color: #94A3B8;
+}
+.carto-file-info {
+  margin-top: 12px;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: white;
+}
+.carto-file-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.carto-file-icon { font-size: 16px; }
+.carto-file-name {
+  flex: 1;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #0F172A;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.carto-file-size { font-size: 11px; color: #94A3B8; }
+.carto-file-remove {
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 6px;
+  background: #FEE2E2;
+  color: #DC2626;
+  font-size: 13px;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.carto-file-remove:hover { background: #FECACA; }
+.carto-file-valid {
+  margin-top: 8px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 11.5px;
+}
+.carto-file-valid.ok {
+  background: #F0FDF4;
+  color: #059669;
+  border: 1px solid #A7F3D0;
+}
+.carto-file-valid.fail {
+  background: #FEF2F2;
+  color: #DC2626;
+  border: 1px solid #FECACA;
+}
+.carto-path-row label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 6px;
+}
+.carto-path-row input {
+  width: 100%;
+  height: 36px;
+  border: 1px solid #E2E8F0;
+  border-radius: 9px;
+  padding: 0 12px;
+  font-size: 12.5px;
+  color: #334155;
+  box-sizing: border-box;
+}
+.carto-path-row input:focus {
+  outline: none;
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, .12);
+}
+.carto-path-hint {
+  margin-top: 6px;
+  font-size: 10.5px;
+  color: #94A3B8;
+}
+.carto-upload-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid #F1F5F9;
+}
+.carto-upload-foot button {
+  height: 34px;
+  padding: 0 18px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+}
+.carto-upload-cancel {
+  border: 1px solid #E2E8F0;
+  background: white;
+  color: #64748B;
+}
+.carto-upload-cancel:hover { background: #F8FAFC; }
+.carto-upload-confirm {
+  border: 1px solid #10B981;
+  background: #10B981;
+  color: white;
+}
+.carto-upload-confirm:hover:not(:disabled) { background: #059669; border-color: #059669; }
+.carto-upload-confirm:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+/* ── 图例管理面板 ─────────────────────────────── */
+.carto-legend-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 800;
+  background: rgba(15, 23, 42, .45);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.carto-legend-mask.show { display: flex; }
+.carto-legend-modal {
+  width: 440px;
+  max-height: 74vh;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, .22);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.carto-legend-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #F1F5F9;
+}
+.carto-legend-head h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0F172A;
+  margin: 0;
+}
+.carto-legend-body {
+  padding: 14px 20px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+.carto-legend-tip {
+  font-size: 11px;
+  color: #94A3B8;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+.carto-legend-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.carto-legend-item-row {
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  background: white;
+  overflow: hidden;
+  transition: all .15s;
+}
+.carto-legend-item-row.expanded {
+  border-color: #93C5FD;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, .1);
+}
+.carto-legend-item-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+}
+.carto-legend-swatch {
+  width: 18px;
+  height: 14px;
+  border-radius: 3px;
+  border: 2px solid;
+  flex-shrink: 0;
+}
+.carto-legend-name {
+  flex: 1;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #0F172A;
+}
+.carto-legend-count {
+  font-size: 10.5px;
+  color: #94A3B8;
+  background: #F1F5F9;
+  padding: 2px 8px;
+  border-radius: 9px;
+}
+.carto-legend-edit-btn {
+  height: 26px;
+  padding: 0 12px;
+  border: 1px solid #E2E8F0;
+  border-radius: 7px;
+  background: white;
+  color: #475569;
+  font-size: 11px;
+  cursor: pointer;
+}
+.carto-legend-edit-btn:hover { border-color: #93C5FD; color: #2563EB; }
+.carto-legend-edit {
+  padding: 12px;
+  border-top: 1px solid #F1F5F9;
+  background: #F8FAFC;
+}
+.carto-legend-edit-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 6px;
+}
+.carto-legend-swatches {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.carto-legend-color {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all .12s;
+}
+.carto-legend-color:hover { transform: scale(1.12); }
+.carto-legend-color.active {
+  border-color: #0F172A;
+  box-shadow: 0 0 0 2px white, 0 0 0 3.5px #0F172A;
+}
+.carto-legend-border-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.carto-legend-border-row input[type="color"] {
+  width: 40px;
+  height: 30px;
+  border: 1px solid #E2E8F0;
+  border-radius: 7px;
+  padding: 2px;
+  cursor: pointer;
+}
+.carto-legend-border-row select {
+  height: 30px;
+  border: 1px solid #E2E8F0;
+  border-radius: 7px;
+  padding: 0 8px;
+  font-size: 11.5px;
+  color: #334155;
+  background: white;
+}
+.carto-legend-apply {
+  width: 100%;
+  height: 32px;
+  margin-top: 10px;
+  border: 1px solid #10B981;
+  border-radius: 8px;
+  background: #10B981;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.carto-legend-apply:hover { background: #059669; }
+/* 「保存并应用」主按钮 */
+.carto-legend-save-apply {
+  width: 100%;
+  height: 36px;
+  margin-top: 4px;
+  border: 1px solid #10B981;
+  border-radius: 9px;
+  background: #10B981;
+  color: white;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+.carto-legend-save-apply:hover { background: #059669; }
+
+/* ── 模板元素双击编辑弹窗 ───────────────────────── */
+.carto-inline-edit-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 810;
+  background: rgba(15, 23, 42, .42);
+  backdrop-filter: blur(3px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.carto-inline-edit-mask.show { display: flex; }
+.carto-inline-edit-modal {
+  width: 360px;
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 22px 60px rgba(15, 23, 42, .22);
+  overflow: hidden;
+}
+.carto-inline-edit-body {
+  padding: 16px 20px 20px;
+}
+.carto-inline-edit-body label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 6px;
+}
+.carto-inline-edit-body input[type="text"] {
+  width: 100%;
+  height: 36px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 13px;
+  color: #0F172A;
+  box-sizing: border-box;
+}
+.carto-inline-edit-body input[type="text"]:focus {
+  outline: none;
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, .12);
+}
+.carto-inline-edit-body small {
+  display: block;
+  margin-top: 6px;
+  font-size: 10.5px;
+  color: #94A3B8;
+}
+.carto-inline-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+}
+.carto-inline-edit-actions button {
+  height: 32px;
+  padding: 0 18px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+}
+#cartoInlineEditCancel {
+  border: 1px solid #E2E8F0;
+  background: white;
+  color: #64748B;
+}
+#cartoInlineEditCancel:hover { background: #F8FAFC; }
+#cartoInlineEditConfirm {
+  border: 1px solid #3B82F6;
+  background: #3B82F6;
+  color: white;
+}
+#cartoInlineEditConfirm:hover { background: #2563EB; }
+
+/* ── 响应式适配 ─────────────────────────────────── */
+@media (max-width: 1180px) {
+  .map-carto-toolbar {
+    left: 76px;
+    right: 8px;
+    max-width: none;
+  }
+  .map-carto-summary small { display: none; }
+  .map-carto-toolbar button { padding: 0 7px; }
+  .map-carto-summary b { max-width: 110px; }
+}
+@media (max-width: 900px) {
+  .map-carto-summary { display: none; }
+  .map-carto-toolbar { left: auto; max-width: calc(100% - 78px); }
+  .carto-upload-modal, .carto-export-modal { width: calc(100vw - 32px); }
+  .carto-template-modal { width: calc(100vw - 32px); }
+}

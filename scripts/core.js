@@ -1,6 +1,11 @@
 // ============ 工具函数 ============
 const $ = s => document.querySelector(s);
 const toast = (m) => { const t=$('#toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200); };
+const refreshMapSize = () => {
+  if(typeof map === 'undefined' || !map) return;
+  if(typeof map.invalidateSize === 'function') map.invalidateSize();
+  else if(typeof map.resize === 'function') map.resize();
+};
 
 // 将浮层依附到触发按钮上方或下方，并限制在当前视口内。
 function positionAnchoredPopover(anchor, pop, placement='auto'){
@@ -58,7 +63,7 @@ const pages=['workbench','tools','agent','agent-edit','agent-detail','res','sett
 function switchPage(p){
   pages.forEach(x=>$('#page-'+x).classList.toggle('active', x===p));
   document.querySelectorAll('.sb-nav-item').forEach(n=>n.classList.toggle('active', n.dataset.page===p));
-  if(p==='workbench' && map){ try{ map.resize(); }catch(e){} }
+  if(p==='workbench') refreshMapSize();
 }
 function openAgentEditPage(){
   // 优先复用新建/编辑表单（四模块），否则仅切换页面
@@ -82,9 +87,9 @@ $('#sbToggle').addEventListener('click', ()=>{
     // 展开时恢复默认宽度
     sb.style.flexBasis='260px';
     sb.style.minWidth='260px';
-    if(map) setTimeout(()=>map.resize(),300);
+    setTimeout(refreshMapSize,300);
   } else {
-    if(map) map.resize();
+    refreshMapSize();
   }
 });
 
@@ -109,14 +114,14 @@ function makeResizable(handleId, targetSelector, direction, minW, maxW){
     const target=$(targetSelector);
     target.style.flexBasis=newW+'px';
     target.style.minWidth=newW+'px';
-    if(map) map.resize();
+    refreshMapSize();
   });
   document.addEventListener('mouseup', ()=>{
     if(!dragging) return;
     dragging=false; handle.classList.remove('dragging');
     document.body.style.cursor='';
     document.body.style.userSelect='';
-    if(map) map.resize();
+    refreshMapSize();
   });
 }
 // 左侧栏拖拽：260px ~ 420px
@@ -124,13 +129,7 @@ makeResizable('resizeLeft','#sidebar','left',180,480);
 // 右侧对话面板拖拽：280px ~ 560px
 makeResizable('resizeRight','#rightPanel','right',220,600);
 
-// 侧栏会话操作（常驻，初始化时绑定一次）
-$('#sbNewChatBtn').addEventListener('click', ()=>{
-  switchPage('workbench');
-  chatBody.innerHTML='<div class="bubble ai"><div class="av">AI</div><div class="txt">已开启新对话，有什么可以帮你的？</div></div>';
-  toast('新建对话');
-});
-document.querySelectorAll('.sess-item').forEach(si=>{
-  si.addEventListener('click', ()=>{ switchPage('workbench'); addBubble('user',si.textContent); aiReply(si.textContent); });
-});
-
+// 侧栏会话操作已迁移至 scripts/conversation-manager.js：
+//   - 「＋ 新建对话」→ window.createConversation()
+//   - 历史列表点击 / 右键菜单 → switchConversation / rename / delete
+// 此处不再对静态 .sess-item 绑定（历史栏已改为数据驱动渲染）。

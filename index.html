@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>致地AI客户端 · 原型参考</title>
 <!-- 地图：Leaflet + OpenStreetMap（免 key 方案，演示用，后续可替换为高德 JS API） -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="assets/vendor/leaflet.css" />
 <link rel="stylesheet" href="styles/main.css" />
+<link rel="stylesheet" href="styles/statistics.css" />
 </head>
 <body>
 
@@ -130,25 +131,14 @@
         </button>
       </div>
 
-      <!-- 会话记录：常驻侧栏下方，只展示会话 -->
+      <!-- 会话记录：文件树结构（任务 + 空间统一展示） -->
       <div class="sb-sessions">
         <button class="sb-new-chat-btn" id="sbNewChatBtn">＋ 新建对话</button>
-        <div class="sb-sessions-scroll">
-          <div class="sess-group"><div class="sess-group-title">今天</div>
-            <div class="sess-item">全国人口分布分析</div>
-            <div class="sess-item">长三角土地利用变化</div>
-            <div class="sess-item">京津冀产业聚集区识别</div>
-          </div>
-          <div class="sess-group"><div class="sess-group-title">昨天</div>
-            <div class="sess-item">水资源承载力评估</div>
-            <div class="sess-item">城市热岛效应监测</div>
-          </div>
-          <div class="sess-group"><div class="sess-group-title">7天内</div>
-            <div class="sess-item">耕地非农化排查</div>
-            <div class="sess-item">自然保护区生态监测</div>
-            <div class="sess-item">林地覆盖度变化</div>
-          </div>
+        <div class="conv-search">
+          <span class="conv-search-ic">🔍</span>
+          <input id="convSearchInput" type="text" placeholder="搜索对话…" autocomplete="off" />
         </div>
+        <div class="sb-sessions-scroll" id="convList"></div>
       </div>
 
       <!-- 底部用户栏 -->
@@ -219,31 +209,384 @@
       <!-- 工作台页（地图 + 对话） -->
       <div class="page active" id="page-workbench">
         <div class="center">
-          <div id="map"></div>
-          <div class="map-fallback" id="mapFallback">
-            <div class="mk map-point-a"></div><div class="lbl map-point-a">规划地块 A</div>
-            <div class="mk map-point-b"></div><div class="lbl map-point-b">生态红线区</div>
-            <div class="mk map-point-c"></div><div class="lbl map-point-c">待开发用地</div>
+          <div class="content-workspace" id="contentWorkspace">
+            <section class="workspace-view workspace-map-view active" id="workspaceMapView" data-workspace-mode="map" aria-label="地图工作区">
+              <div id="map"></div>
+              <div class="map-fallback" id="mapFallback">
+                <div class="mk map-point-a"></div><div class="lbl map-point-a">规划地块 A</div>
+                <div class="mk map-point-b"></div><div class="lbl map-point-b">生态红线区</div>
+                <div class="mk map-point-c"></div><div class="lbl map-point-c">待开发用地</div>
+              </div>
+              <div class="map-search"><span class="ic">🔍</span><input placeholder="搜索地点、地块编号、坐标…" /></div>
+              <nav class="map-toolbar" aria-label="本地空间数据预览工具">
+                <button class="mt-btn vector-loader disabled" type="button" data-tool="load-local" data-tooltip="加载本地空间文件" title="请先选择工作空间" aria-label="加载本地空间文件" aria-disabled="true" disabled><span aria-hidden="true">▱</span></button>
+                <div class="map-tool-drawer-wrap">
+                  <button class="mt-btn" type="button" data-tool="layer-manager" data-map-drawer-toggle="layer-manager" data-tooltip="图层管理" title="图层管理" aria-label="图层管理" aria-pressed="false" aria-expanded="false"><span aria-hidden="true">☷</span></button>
+                  <div class="map-tool-drawer layer-manager-drawer" data-map-drawer="layer-manager" aria-label="图层管理抽屉" hidden>
+                    <div class="map-tool-drawer-content" data-drawer-content>
+                      <div class="lmm-body">
+                        <div class="lmm-row">
+                          <span class="lmm-ic" aria-hidden="true">☷</span>
+                          <div class="lmm-info"><b>图层管理器</b><small>控制图层面板显示 / 隐藏</small></div>
+                          <label class="lmm-switch" aria-label="切换图层管理器显示">
+                            <input type="checkbox" id="lmmToggleLayers" aria-label="切换图层管理器显示" />
+                            <span class="lmm-slider" aria-hidden="true"></span>
+                          </label>
+                        </div>
+                        <div class="lmm-row">
+                          <span class="lmm-ic" aria-hidden="true">▤</span>
+                          <div class="lmm-info"><b>图例管理器</b><small>控制图例面板显示 / 隐藏</small></div>
+                          <label class="lmm-switch" aria-label="切换图例管理器显示">
+                            <input type="checkbox" id="lmmToggleLegend" aria-label="切换图例管理器显示" />
+                            <span class="lmm-slider" aria-hidden="true"></span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <span class="mt-sep" aria-hidden="true"></span>
+                <button class="mt-btn" type="button" data-tool="zoom-in" data-tooltip="放大" title="放大" aria-label="放大"><span aria-hidden="true">＋</span></button>
+                <button class="mt-btn" type="button" data-tool="zoom-out" data-tooltip="缩小" title="缩小" aria-label="缩小"><span aria-hidden="true">−</span></button>
+                <button class="mt-btn disabled" type="button" data-tool="fit-data" data-tooltip="缩放至数据范围" title="加载数据后可用" aria-label="缩放至数据范围" aria-disabled="true" disabled><span aria-hidden="true">⛶</span></button>
+                <span class="mt-sep" aria-hidden="true"></span>
+                <div class="map-tool-drawer-wrap">
+                  <button class="mt-btn" type="button" data-map-drawer-toggle="measure" data-tooltip="测量工具" title="测量工具" aria-label="测量工具" aria-expanded="false"><span aria-hidden="true">↔</span></button>
+                  <div class="map-tool-drawer" data-map-drawer="measure" aria-label="测量工具抽屉" hidden>
+                    <button type="button" class="map-tool-action" data-tool="measure-distance" title="测量距离"><span>↔</span><b>距离</b></button>
+                    <button type="button" class="map-tool-action" data-tool="measure-area" title="测量面积"><span>△</span><b>面积</b></button>
+                  </div>
+                </div>
+                <button class="mt-btn disabled" type="button" data-tool="query-feature" data-tooltip="查询要素属性" title="加载数据后可用" aria-label="查询要素属性" aria-disabled="true" disabled><span aria-hidden="true">i</span></button>
+                <div class="map-tool-drawer-wrap">
+                  <button class="mt-btn" type="button" data-map-drawer-toggle="annotation" data-tooltip="标注工具" title="标注工具" aria-label="标注工具" aria-expanded="false"><span aria-hidden="true">✎</span></button>
+                  <div class="map-tool-drawer annotation-drawer" data-map-drawer="annotation" aria-label="标注工具抽屉" hidden>
+                    <button type="button" class="map-tool-action" data-tool="annotation-point" title="添加点标注"><span>●</span><b>点</b></button>
+                    <button type="button" class="map-tool-action" data-tool="annotation-line" title="添加线标注"><span>╱</span><b>线</b></button>
+                    <button type="button" class="map-tool-action" data-tool="annotation-polygon" title="添加面标注"><span>◇</span><b>面</b></button>
+                    <button type="button" class="map-tool-action" data-tool="annotation-text" title="添加文字标注"><span>T</span><b>文字</b></button>
+                    <button type="button" class="map-tool-action disabled" data-tool="annotation-edit" title="添加标注后可用" aria-disabled="true" disabled><span>✥</span><b>编辑</b></button>
+                    <button type="button" class="map-tool-action disabled" data-tool="annotation-delete-selected" title="添加标注后可用" aria-disabled="true" disabled><span>×</span><b>删除</b></button>
+                    <button type="button" class="map-tool-action danger clear-all" data-tool="annotation-clear-all" title="一键删除所有标注" aria-disabled="true" disabled><span>⌫</span><b>清空全部</b></button>
+                  </div>
+                </div>
+              </nav>
+              <aside class="vector-layer-panel" id="vectorLayerPanel" aria-label="矢量图层列表">
+                <div class="vlp-head"><span>图层管理</span><span class="vlp-head-actions"><span class="vlp-count" id="vectorLayerCount">0</span><button type="button" id="vectorLayerPanelClose" aria-label="关闭图层管理">×</button></span></div>
+                <div class="vlp-list" id="vectorLayerList"></div>
+              </aside>
+              <div class="map-clear-confirm" id="mapClearConfirm" role="dialog" aria-modal="true" aria-labelledby="mapClearConfirmTitle" hidden>
+                <div class="map-clear-confirm-card">
+                  <div class="map-clear-confirm-icon">!</div>
+                  <div><b id="mapClearConfirmTitle">清空全部标注？</b><p>将删除当前地图中的 <strong id="mapClearAnnotationCount">0</strong> 个标注，不会影响原始空间数据。</p></div>
+                  <div class="map-clear-confirm-actions"><button type="button" data-clear-action="cancel">取消</button><button type="button" class="danger" data-clear-action="confirm">清空全部</button></div>
+                </div>
+              </div>
+              <div class="map-undo-toast" id="mapAnnotationUndoToast" hidden><span>已清空 <b id="mapClearedAnnotationCount">0</b> 个标注</span><button type="button" data-clear-action="undo">撤销</button></div>
+              <div class="map-badge" id="mapBadge">地图模式：演示兜底（未配置高德 Key）</div>
+              <aside class="map-legend" id="mapLegend" aria-label="图层图例">
+                <div class="map-legend-head"><span>图例</span><span class="map-legend-count" id="mapLegendCount">0</span><button type="button" class="map-legend-close" data-legend-close aria-label="关闭图例" title="关闭图例">×</button></div>
+                <ul class="map-legend-list" id="mapLegendList"></ul>
+              </aside>
+              <div class="map-result-toolbar map-stage-tools" id="mapResultToolbar" aria-label="Agent 结果审阅工具" hidden>
+                <div class="map-result-summary"><span>✨</span><b>商业用地筛选结果</b><small><span id="mapResultFeatureCount">37</span> 个要素</small></div>
+                <div class="map-tool-divider"></div>
+                <div class="map-tool-menu-wrap">
+                  <button type="button" data-map-menu-toggle="result-selection">选择⌄</button>
+                  <div class="map-tool-menu" data-map-menu="result-selection" hidden>
+                    <button type="button" data-result-tool="select">点选</button>
+                    <button type="button" data-result-tool="box-select">框选</button>
+                    <button type="button" data-result-tool="clear-selection">清除选择</button>
+                  </div>
+                </div>
+                <button type="button" data-result-tool="properties">属性</button>
+                <button type="button" data-result-tool="style">样式</button>
+                <div class="map-tool-menu-wrap">
+                  <button type="button" data-map-menu-toggle="result-graphics">标注⌄</button>
+                  <div class="map-tool-menu" data-map-menu="result-graphics" hidden>
+                    <button type="button" data-graphic-tool="marker">点标记</button>
+                    <button type="button" data-graphic-tool="rectangle">矩形</button>
+                    <button type="button" data-graphic-tool="arrow">箭头</button>
+                    <button type="button" data-graphic-tool="text">文字</button>
+                  </div>
+                </div>
+                <button type="button" data-result-tool="manual-edit" class="map-manual-entry">手动编辑</button>
+                <button type="button" data-result-tool="save">保存结果</button>
+              </div>
+              <div class="map-manual-toolbar map-stage-tools" id="mapManualToolbar" aria-label="手动编辑工具" hidden>
+                <div class="map-result-summary map-edit-layer-summary"><span>✎</span><b>编辑图层</b><small id="mapEditingLayerName">未选择图层</small><em id="mapEditingGeometryType">面</em></div>
+                <div class="map-tool-divider"></div>
+                <div class="map-tool-menu-wrap">
+                  <button type="button" data-map-menu-toggle="edit-basic">基础操作⌄</button>
+                  <div class="map-tool-menu map-edit-menu" data-map-menu="edit-basic" hidden>
+                    <button type="button" data-manual-tool="select">选择对象</button>
+                    <button type="button" data-manual-tool="move-feature" data-requires-selection>移动对象</button>
+                    <button type="button" data-manual-tool="modify-feature" data-geometry-types="线,面" data-requires-selection>修改</button>
+                    <button type="button" data-manual-tool="delete-feature" data-requires-selection>删除</button>
+                    <button type="button" data-manual-tool="copy-feature" data-requires-selection>复制</button>
+                    <button type="button" data-manual-tool="paste-feature" id="mapPasteFeatureBtn" disabled>粘贴</button>
+                  </div>
+                </div>
+                <div class="map-tool-menu-wrap">
+                  <button type="button" data-map-menu-toggle="edit-geometry">几何编辑⌄</button>
+                  <div class="map-tool-menu map-edit-menu" data-map-menu="edit-geometry" hidden>
+                    <button type="button" data-manual-tool="rotate-feature" data-geometry-types="线,面" data-requires-selection>旋转</button>
+                    <button type="button" data-manual-tool="scale-feature" data-geometry-types="线,面" data-requires-selection>缩放</button>
+                    <button type="button" data-manual-tool="vertex-edit" data-geometry-types="线,面" data-requires-selection>节点编辑</button>
+                    <button type="button" data-manual-tool="split-feature" data-geometry-types="线,面" data-requires-selection>分割</button>
+                    <button type="button" data-manual-tool="clip-feature" data-geometry-types="线,面" data-requires-selection>裁剪</button>
+                  </div>
+                </div>
+                <button type="button" data-manual-tool="style">样式管理</button>
+                <button type="button" data-manual-tool="properties" data-requires-selection>属性编辑</button>
+                <button type="button" data-manual-tool="undo" id="mapUndoBtn" disabled>撤销</button>
+                <button type="button" data-manual-tool="redo" id="mapRedoBtn" disabled>重做</button>
+                <button type="button" data-manual-tool="save-edit" class="map-save-edit">保存编辑</button>
+                <button type="button" data-manual-tool="exit-edit" class="map-finish-edit">退出编辑</button>
+              </div>
+              <!-- 制图模式工具栏（cartography-edit 阶段显示） -->
+              <div class="map-carto-toolbar map-stage-tools" id="mapCartoToolbar" aria-label="制图编辑工具" hidden>
+                <div class="map-carto-summary"><span>🗺️</span><b id="mapCartoMapName">现状用地图</b><small id="mapCartoFeatureCount">0 个要素</small></div>
+                <div class="map-tool-divider"></div>
+                <!-- 选择：点选 / 框选 / 清除 -->
+                <div class="map-tool-menu-wrap">
+                  <button type="button" data-map-menu-toggle="carto-select">选择⌄</button>
+                  <div class="map-tool-menu" data-map-menu="carto-select" hidden>
+                    <button type="button" data-carto-tool="select">点选</button>
+                    <button type="button" data-carto-tool="box-select">框选</button>
+                    <button type="button" data-carto-tool="clear-selection">清除选择</button>
+                  </div>
+                </div>
+                <!-- 标注：点 / 线 / 面 / 文字 -->
+                <div class="map-tool-menu-wrap">
+                  <button type="button" data-map-menu-toggle="carto-annotate">标注⌄</button>
+                  <div class="map-tool-menu" data-map-menu="carto-annotate" hidden>
+                    <button type="button" data-graphic-tool="marker">点标注</button>
+                    <button type="button" data-graphic-tool="arrow">线标注</button>
+                    <button type="button" data-graphic-tool="polygon">面标注</button>
+                    <button type="button" data-graphic-tool="text">文字标注</button>
+                    <div class="map-menu-divider"></div>
+                    <button type="button" data-graphic-action="clear-all" class="map-menu-danger">清除所有标记</button>
+                  </div>
+                </div>
+                <button type="button" data-carto-tool="properties">属性</button>
+                <button type="button" data-carto-tool="manual-edit" class="map-manual-entry">手动编辑</button>
+                <button type="button" data-carto-tool="select-all">全选</button>
+                <div class="map-tool-divider"></div>
+                <!-- 主操作按钮：模板出现前「确认」询问模板；模板应用后自动切换为「导出」 -->
+                <button type="button" data-carto-tool="confirm" id="mapCartoPrimaryBtn">确认</button>
+              </div>
+
+              <!-- 官方模板库弹窗（可浏览 / 搜索 / 分类筛选） -->
+              <div class="carto-template-mask" id="cartoTemplateMask">
+                <div class="carto-template-modal">
+                  <div class="carto-template-head">
+                    <h3>官方模板库 <small class="carto-lib-count" id="cartoLibCount">0</small></h3>
+                    <button type="button" class="carto-template-close" id="cartoTemplateClose" aria-label="关闭">×</button>
+                  </div>
+                  <div class="carto-template-toolbar">
+                    <div class="carto-lib-search">
+                      <span class="carto-lib-search-icon">🔍</span>
+                      <input type="text" id="cartoLibSearch" placeholder="搜索模板名称 / 标签 / 用途…">
+                    </div>
+                    <div class="carto-cat-filters" id="cartoCatFilters"></div>
+                  </div>
+                  <div class="carto-template-body">
+                    <div class="carto-template-grid" id="cartoTemplateGrid"></div>
+                  </div>
+                  <div class="carto-template-foot">
+                    <button type="button" class="carto-template-cancel" id="cartoTemplateCancel">取消</button>
+                    <button type="button" class="carto-template-confirm" id="cartoTemplateConfirm">添加至当前上下文</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 导出面板 -->
+              <div class="carto-export-mask" id="cartoExportMask">
+                <div class="carto-export-modal">
+                  <div class="carto-export-head">
+                    <h3>导出制图成果</h3>
+                    <button type="button" class="carto-template-close" id="cartoExportClose" aria-label="关闭">×</button>
+                  </div>
+                  <div class="carto-export-body">
+                    <div class="carto-export-format">
+                      <label class="carto-format-option selected" data-format="png">
+                        <div class="carto-format-icon">🖼️</div>
+                        <div class="carto-format-name">PNG 图片</div>
+                        <div class="carto-format-desc">用于文档/演示</div>
+                      </label>
+                      <label class="carto-format-option" data-format="geojson">
+                        <div class="carto-format-icon">📐</div>
+                        <div class="carto-format-name">GeoJSON 矢量</div>
+                        <div class="carto-format-desc">可二次编辑</div>
+                      </label>
+                    </div>
+                    <div class="carto-export-options">
+                      <label>分辨率倍数</label>
+                      <select id="cartoExportScale">
+                        <option value="1">1× 标准清晰度</option>
+                        <option value="2" selected>2× 高清</option>
+                        <option value="3">3× 超高清</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="carto-export-foot">
+                    <button type="button" class="carto-export-cancel" id="cartoExportCancel">取消</button>
+                    <button type="button" class="carto-export-download" id="cartoExportDownload">下载文件</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 模板来源：上传 / 指定本地路径面板 -->
+              <div class="carto-upload-mask" id="cartoUploadMask">
+                <div class="carto-upload-modal">
+                  <div class="carto-upload-head">
+                    <h3>添加本地模板</h3>
+                    <button type="button" class="carto-template-close" id="cartoUploadClose" aria-label="关闭">×</button>
+                  </div>
+                  <div class="carto-upload-tabs">
+                    <button type="button" class="carto-upload-tab active" data-upload-tab="file">上传文件</button>
+                    <button type="button" class="carto-upload-tab" data-upload-tab="path">指定本地路径</button>
+                  </div>
+                  <div class="carto-upload-body">
+                    <!-- 上传文件方式 -->
+                    <div class="carto-upload-pane" data-upload-pane="file">
+                      <div class="carto-dropzone" id="cartoDropzone">
+                        <div class="carto-dropzone-icon">📤</div>
+                        <div class="carto-dropzone-text"><b>点击选择或拖拽文件到此处</b><small>支持 SVG / DWG / DXF / GeoJSON / JSON / ZIP 模板文件，≤ 20MB</small></div>
+                        <input type="file" id="cartoFileInput" accept=".svg,.dwg,.dxf,.geojson,.json,.zip" hidden>
+                      </div>
+                      <div class="carto-file-info" id="cartoFileInfo" hidden>
+                        <div class="carto-file-row"><span class="carto-file-icon">📎</span><span class="carto-file-name" id="cartoFileName"></span><span class="carto-file-size" id="cartoFileSize"></span><button type="button" class="carto-file-remove" id="cartoFileRemove" aria-label="移除">×</button></div>
+                        <div class="carto-file-valid" id="cartoFileValid" hidden></div>
+                      </div>
+                    </div>
+                    <!-- 指定本地路径方式 -->
+                    <div class="carto-upload-pane" data-upload-pane="path" hidden>
+                      <div class="carto-path-row">
+                        <label>模板文件路径</label>
+                        <input type="text" id="cartoPathInput" placeholder="例如：D:\制图模板\标准A3图框.dwg 或 /home/user/templates/a3.svg">
+                        <div class="carto-path-hint">支持绝对路径（Windows / macOS / Linux），文件需为模板格式</div>
+                      </div>
+                      <div class="carto-file-valid" id="cartoPathValid" hidden></div>
+                    </div>
+                  </div>
+                  <div class="carto-upload-foot">
+                    <button type="button" class="carto-upload-cancel" id="cartoUploadCancel">取消</button>
+                    <button type="button" class="carto-upload-confirm" id="cartoUploadConfirm" disabled>校验并添加</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 图例管理面板 -->
+              <div class="carto-legend-mask" id="cartoLegendMask">
+                <div class="carto-legend-modal">
+                  <div class="carto-legend-head">
+                    <h3>图例管理</h3>
+                    <button type="button" class="carto-template-close" id="cartoLegendClose" aria-label="关闭">×</button>
+                  </div>
+                  <div class="carto-legend-body">
+                    <div class="carto-legend-tip">点击「编辑」修改图例样式（颜色 / 边框），完成后点击底部「保存并应用」</div>
+                    <div class="carto-legend-list" id="cartoLegendList"></div>
+                    <button type="button" class="carto-legend-save-apply" id="cartoLegendSaveApply">保存并应用</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="map-result-layer" id="mapResultLayer" aria-label="商业用地筛选结果" hidden>
+                <svg id="mapResultSvg" viewBox="0 0 1000 700" preserveAspectRatio="none" aria-hidden="true"></svg>
+                <div class="map-box-selection" id="mapBoxSelection" hidden></div>
+              </div>
+
+              <!-- 模板元素双击编辑弹窗（标题 / 文字注记 / 比例尺直接修改） -->
+              <div class="carto-inline-edit-mask" id="cartoInlineEditMask">
+                <div class="carto-inline-edit-modal">
+                  <div class="carto-legend-head">
+                    <h3 id="cartoInlineEditTitle">修改标题</h3>
+                    <button type="button" class="carto-template-close" id="cartoInlineEditClose" aria-label="关闭">×</button>
+                  </div>
+                  <div class="carto-inline-edit-body">
+                    <label>内容</label>
+                    <input type="text" id="cartoInlineEditInput" maxlength="40" placeholder="输入新内容">
+                    <small id="cartoInlineEditHint">输入新内容，如：福田区现状用地图</small>
+                    <div class="carto-inline-edit-actions">
+                      <button type="button" id="cartoInlineEditCancel">取消</button>
+                      <button type="button" id="cartoInlineEditConfirm">确定</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="map-graphics-layer" id="mapGraphicsLayer" aria-label="图形标注层" hidden>
+                <svg id="mapGraphicsSvg" viewBox="0 0 1000 700" preserveAspectRatio="none" aria-hidden="true">
+                  <defs><marker id="mapArrowHead" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z"></path></marker></defs>
+                </svg>
+                <div class="map-graphic-preview" id="mapGraphicPreview" hidden></div>
+              </div>
+              <div class="map-manual-notice" id="mapManualNotice" hidden>正在编辑 <b id="mapManualNoticeLayer">当前图层</b> · 所有操作仅作用于该图层（交互原型）</div>
+              <div class="map-selection-actions" id="mapSelectionActions" hidden>
+                <span id="mapSelectionSummary">已选择 <b id="mapSelectedCount">0</b> 个要素</span>
+                <button type="button" data-selection-action="ask-ai">询问 AI</button>
+                <button type="button" data-selection-action="reanalyze">重新分析</button>
+                <button type="button" data-selection-action="properties">查看属性</button>
+                <button type="button" data-selection-action="manual-delete" hidden>删除</button>
+              </div>
+              <aside class="map-result-panel" id="mapStylePanel" hidden aria-label="图层样式">
+                <div class="mrp-head"><b>图层样式</b><button type="button" data-panel-close>✕</button></div>
+                <label>填充透明度 <input id="resultFillOpacity" type="range" min="10" max="80" value="38"></label>
+                <label>边框粗细 <input id="resultStrokeWidth" type="range" min="1" max="6" value="2"></label>
+                <div class="result-color-options" aria-label="颜色选项">
+                  <button type="button" data-result-color="#10B981" class="active" aria-label="绿色"></button>
+                  <button type="button" data-result-color="#3B82F6" aria-label="蓝色"></button>
+                  <button type="button" data-result-color="#F59E0B" aria-label="橙色"></button>
+                </div>
+                <div class="map-edit-style-section" id="mapEditStyleSection" hidden>
+                  <label>类别名称 <input type="text" id="mapEditCategoryName" value="商业用地"></label>
+                  <label>边框颜色 <input type="color" id="mapEditStrokeColor" value="#047857"></label>
+                  <div class="map-edit-panel-actions"><button type="button" data-edit-style-action="apply-create-legend">应用到选中对象并创建新图例</button></div>
+                </div>
+              </aside>
+              <aside class="map-result-panel" id="mapPropertiesPanel" hidden aria-label="要素属性">
+                <div class="mrp-head"><b>要素属性</b><button type="button" data-panel-close>✕</button></div>
+                <div id="mapPropertiesContent" class="map-properties-content"></div>
+                <button type="button" class="map-property-save" id="mapPropertySaveBtn" hidden>保存属性</button>
+              </aside>
+            </section>
+            <section class="workspace-view workspace-image-view" id="workspaceImageView" data-workspace-mode="image" aria-label="图片工作区" hidden></section>
+            <section class="workspace-view workspace-document-view" id="workspaceDocumentView" data-workspace-mode="document" aria-label="文档工作区" hidden>
+              <header class="document-toolbar">
+                <div class="document-file-info"><span class="document-file-icon">W</span><div><b id="documentFileName">未打开文档</b><small id="documentSaveStatus">等待生成</small></div></div>
+                <div class="document-toolbar-actions">
+                  <button type="button" id="documentFitWidth" class="active">适应宽度</button>
+                  <button type="button" id="documentActualSize">100%</button>
+                  <button type="button" id="documentUndo" disabled>撤销修改</button>
+                  <button type="button" id="documentOpenFolder">打开文件夹</button>
+                  <button type="button" id="documentBackMap">返回地图</button>
+                </div>
+              </header>
+              <div class="document-stage" id="documentStage">
+                <article class="document-paper fit-width" id="documentPaper" aria-label="公文预览">
+                  <div class="document-empty" id="documentEmpty"><span>📄</span><b>公文将在这里打开</b><p>在右侧输入“生成一份自然资源管理工作通知”开始演示</p></div>
+                  <div class="document-content" id="documentContent" hidden></div>
+                </article>
+              </div>
+              <div class="document-selection-toolbar" id="documentSelectionToolbar" hidden>
+                <span id="documentSelectionLabel">已选择文段</span>
+                <button type="button" data-document-action="ask-ai">询问 AI</button>
+                <button type="button" data-document-action="polish">润色</button>
+                <button type="button" data-document-action="rewrite">改写</button>
+                <button type="button" data-document-action="shorten">缩短</button>
+                <button type="button" data-document-action="supplement">补充</button>
+                <button type="button" data-document-action="format">格式</button>
+              </div>
+              <aside class="document-format-panel" id="documentFormatPanel" hidden>
+                <div><b>文段格式</b><button type="button" id="documentFormatClose">✕</button></div>
+                <button type="button" data-document-format="bold">加粗</button>
+                <button type="button" data-document-format="heading">设为小标题</button>
+                <button type="button" data-document-format="center">居中</button>
+                <button type="button" data-document-format="indent">首行缩进</button>
+              </aside>
+            </section>
           </div>
-          <div class="map-search"><span class="ic">🔍</span><input placeholder="搜索地点、地块编号、坐标…" /></div>
-          <div class="map-toolbar">
-            <div class="mt-btn vector-loader disabled" data-tool="layer" title="请先选择工作空间" aria-disabled="true"><span class="mt-vector-icon">🗂️</span><span class="mt-vector-label">加载矢量数据</span></div>
-            <div class="mt-sep"></div>
-            <div class="mt-btn" data-tool="point" title="点标注">📍</div>
-            <div class="mt-btn" data-tool="line" title="线编辑">〰️</div>
-            <div class="mt-btn" data-tool="polygon" title="面编辑">⬡</div>
-            <div class="mt-btn" data-tool="measure" title="测量">📐</div>
-            <div class="mt-sep"></div>
-            <div class="mt-btn" data-tool="zoomIn" title="放大">➕</div>
-            <div class="mt-btn" data-tool="zoomOut" title="缩小">➖</div>
-            <div class="mt-sep"></div>
-            <div class="mt-btn" data-tool="select" title="圈选范围让AI修改">⭕</div>
-          </div>
-          <aside class="vector-layer-panel" id="vectorLayerPanel" aria-label="矢量图层列表">
-            <div class="vlp-head"><span>图层列表</span><span class="vlp-count" id="vectorLayerCount">0</span></div>
-            <div class="vlp-list" id="vectorLayerList"></div>
-          </aside>
-          <div class="map-badge" id="mapBadge">地图模式：演示兜底（未配置高德 Key）</div>
         </div>
         <!-- 右侧拖拽分割条 -->
         <div class="resize-handle" id="resizeRight" data-target="rightPanel"></div>
@@ -262,9 +605,9 @@
               <div class="txt">你好，我是致地AI 助手。我可以帮你进行空间分析、制图、数据查询与报告生成。</div>
             </div>
             <div class="quick">
-              <div class="q">生成专题图</div>
-              <div class="q">查询生态红线</div>
-              <div class="q">统计分析报告</div>
+              <div class="q">统计成都市不同类型设施的个数</div>
+              <div class="q">帮我筛选福田区面积大于5000㎡的商业用地</div>
+              <div class="q">写一份国土空间规划工作函</div>
             </div>
           </div>
           <!-- 快捷指令填充：两级递进（分类列表 → 子任务） -->
@@ -288,6 +631,7 @@
             <div class="box">
               <div class="qc-tag" id="qcTag" style="display:none;"><span class="qc-tag-name"></span><button class="qc-tag-x" id="qcTagX" type="button" title="移除快捷指令">✕</button></div>
               <div class="qc-tag file-ref-tag" id="fileRefTag" style="display:none;"><span class="qc-tag-name"></span><button class="qc-tag-x" type="button" title="移除文件引用">✕</button></div>
+              <div class="document-context-tag" id="documentContextTag" hidden><span class="document-context-icon">📄</span><span class="document-context-copy"><b id="documentContextTitle">已引用选中文段</b><small id="documentContextExcerpt"></small></span><button type="button" id="documentContextClose" title="移除文档引用">✕</button></div>
               <textarea id="chatText" placeholder="今天帮你做些什么？@ 引用对话文件，/ 调用技能与指令"></textarea>
               <div class="bar">
                 <button class="ci-plus" id="ciPlusBtn" title="更多选项">＋</button>
@@ -491,7 +835,14 @@
                   <label>标签</label>
                   <div class="aee-tags-input" id="aeeTagsInput">
                     <div class="aee-tags-list" id="aeeTagsList"></div>
-                    <input id="aeeTagInput" placeholder="输入标签后回车添加（最多 10 个，每个 ≤16 字符）" maxlength="16" />
+                    <select id="aeeTagInput" class="aee-tag-select">
+                      <option value="全部" data-cat="全部" selected>全部</option>
+                      <option value="规划类" data-cat="规划类">规划类</option>
+                      <option value="分析类" data-cat="分析类">分析类</option>
+                      <option value="审查类" data-cat="审查类">审查类</option>
+                      <option value="数据类" data-cat="数据类">数据类</option>
+                      <option value="其他" data-cat="其他">其他</option>
+                    </select>
                   </div>
                 </div>
               </div>
@@ -590,51 +941,89 @@
             </button>
             <div class="aee-title-row">
               <span class="aee-title-ic">🧠</span>
-              <h2>配置大模型</h2>
-            </div>
-            <div class="aee-actions">
-              <button class="aee-btn ghost" id="mcCancelBtn">取消</button>
-              <button class="aee-btn primary" id="mcSaveBtn">保存</button>
+              <h2>大模型配置</h2>
             </div>
           </div>
 
           <div class="aee-body" id="mcBody">
-            <div class="aee-card">
-              <div class="aee-card-head">
-                <span class="aee-card-ic">🧠</span>
-                <h3>模型信息</h3>
-              </div>
-              <div class="aee-form">
-                <div class="aee-field">
-                  <label>模型名称</label>
-                  <input id="mcName" placeholder="例如：我的私有模型" />
+            <!-- 板块一：自定义模型配置 -->
+            <div class="mc-section">
+              <h3 class="mc-section-title">自定义模型</h3>
+              <div class="mc-config-card">
+                <div class="mc-config-info">
+                  <span class="mc-config-label">本地配置文件</span>
+                  <p class="mc-config-path">管理写入到 <code>%USERPROFILE%\.geoagent\models.json</code> 的本地自定义模型配置。</p>
                 </div>
-                <div class="aee-field aee-field-sm">
-                  <label>供应商 / 类型</label>
-                  <select id="mcProvider">
-                    <option value="自建">自建 / 私有部署</option>
-                    <option value="OpenAI">OpenAI 兼容</option>
-                    <option value="通义">通义千问</option>
-                    <option value="智谱">智谱 GLM</option>
-                    <option value="Anthropic">Anthropic</option>
-                    <option value="Google">Google</option>
-                    <option value="其他">其他</option>
-                  </select>
-                </div>
-                <div class="aee-field">
-                  <label>API 地址</label>
-                  <input id="mcEndpoint" placeholder="https://api.example.com/v1" />
-                </div>
-                <div class="aee-field">
-                  <label>API Key</label>
-                  <input id="mcKey" type="password" placeholder="sk-..." />
-                </div>
-                <div class="aee-field">
-                  <label>简要描述</label>
-                  <textarea id="mcDesc" rows="3" placeholder="描述该模型的用途或特点"></textarea>
-                </div>
+                <button class="mc-add-btn" id="mcAddModelBtn">＋ 添加模型</button>
               </div>
             </div>
+
+            <!-- 板块二：已保存模型 -->
+            <div class="mc-section">
+              <h3 class="mc-section-title">已保存模型</h3>
+              <div class="mc-saved-list" id="mcSavedList">
+                <!-- JS 动态渲染 -->
+              </div>
+              <div class="mc-empty" id="mcEmptyState" style="display:none;">
+                <p>暂无已保存的自定义模型</p>
+                <span>点击上方「添加模型」按钮新增</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 添加模型弹窗 -->
+      <div class="mc-modal-mask" id="mcModalMask">
+        <div class="mc-modal">
+          <div class="mc-modal-head">
+            <h3>添加模型</h3>
+            <span class="mc-modal-subtitle">仅支持 OpenAI 兼容协议 API</span>
+            <button class="mc-modal-close" id="mcModalClose" type="button">✕</button>
+          </div>
+          <div class="mc-modal-body">
+            <div class="mc-field">
+              <label class="mc-label">提供商 <a href="#" class="mc-doc-link" id="mcDocLink" target="_blank">查看文档</a></label>
+              <div class="mc-select-wrap">
+                <select id="mcModalProvider" class="mc-select">
+                  <option value="">请选择提供商</option>
+                  <option value="tencent-cloud">腾讯云 Token Plan / 通用 Token Plan（个人版）</option>
+                  <option value="openai">OpenAI</option>
+                  <option value="tongyi">通义千问</option>
+                  <option value="zhipu">智谱 GLM</option>
+                  <option value="anthropic">Anthropic</option>
+                  <option value="google">Google</option>
+                  <option value="custom">自建 / 其他兼容</option>
+                </select>
+              </div>
+            </div>
+            <div class="mc-field">
+              <label class="mc-label">API Key</label>
+              <div class="mc-input-group">
+                <input id="mcModalApiKey" type="password" class="mc-input" placeholder="输入你的 API Key" />
+                <button class="mc-eye-btn" id="mcEyeBtn" type="button">👁</button>
+              </div>
+            </div>
+            <div class="mc-field">
+              <label class="mc-label">模型名称</label>
+              <div class="mc-select-wrap">
+                <select id="mcModalModelName" class="mc-select">
+                  <option value="Auto">Auto</option>
+                  <option value="gpt-4o">GPT-4o</option>
+                  <option value="gpt-4o-mini">GPT-4o Mini</option>
+                  <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
+                  <option value="claude-haiku-4-20250514">Claude Haiku 4</option>
+                  <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                  <option value="qwen-max">Qwen Max</option>
+                  <option value="glm-4">GLM-4</option>
+                  <option value="custom">自定义模型 ID</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="mc-modal-foot">
+            <button class="mc-btn mc-btn-cancel" id="mcModalCancel">取消</button>
+            <button class="mc-btn mc-btn-save" id="mcModalSave">保存</button>
           </div>
         </div>
       </div>
@@ -968,6 +1357,7 @@
       <span class="cps-ic">🔍</span>
       <input id="capAgentSearch" placeholder="搜索智能体名称、描述…" />
     </div>
+    <div class="cap-cats" id="capAgentCats"></div>
     <div class="aee-picker-body" id="capAgentList"></div>
     <div class="aee-picker-foot">
       <span class="cap-count" id="capAgentCount">已选 0 项</span>
@@ -988,6 +1378,7 @@
       <span class="cps-ic">🔍</span>
       <input id="capToolSearch" placeholder="搜索工具名称…" />
     </div>
+    <div class="cap-cats" id="capToolCats"></div>
     <div class="aee-picker-body" id="capToolList"></div>
     <div class="aee-picker-foot">
       <span class="cap-count" id="capToolCount">已选 0 项</span>
@@ -1166,16 +1557,17 @@
   </div>
 </div>
 
-<!-- 选择 GIS 工作空间弹窗 -->
+<!-- 选择 GIS 工作空间（项目空间）弹窗 -->
 <div class="gis-modal-mask" id="workspaceFolderMask">
   <div class="gis-modal" role="dialog" aria-modal="true" aria-labelledby="workspaceFolderTitle">
-    <div class="gis-modal-head"><h3 id="workspaceFolderTitle">选择本地文件夹</h3><button class="gis-modal-close" id="workspaceFolderClose" title="关闭">✕</button></div>
+    <div class="gis-modal-head"><h3 id="workspaceFolderTitle">选择项目空间</h3><button class="gis-modal-close" id="workspaceFolderClose" title="关闭">✕</button></div>
     <div class="gis-modal-body">
-      <p class="gis-modal-desc">选择 GIS 项目目录后，将自动扫描其中的矢量数据文件。</p>
+      <p class="gis-modal-desc">选择项目空间后，将自动扫描其中的矢量数据，并作为后续对话的上下文。</p>
+      <div class="gis-space-list" id="gisSpaceList"></div>
       <label class="gis-path-field"><span>文件夹路径</span><input id="workspacePathInput" value="E:/GIS/project/" readonly /></label>
-      <div class="gis-folder-preview"><span>📁</span><div><b>project</b><small>模拟本地 GIS 工作空间</small></div></div>
+      <div class="gis-folder-preview" id="gisFolderPreview"><span>📁</span><div><b>project</b><small>模拟本地 GIS 工作空间</small></div></div>
     </div>
-    <div class="gis-modal-foot"><button class="gis-btn ghost" id="workspaceFolderCancel">取消</button><button class="gis-btn primary" id="workspaceFolderConfirm">选择此文件夹</button></div>
+    <div class="gis-modal-foot"><button class="gis-btn ghost" id="workspaceFolderCancel">取消</button><button class="gis-btn primary" id="workspaceFolderConfirm">选择此空间</button></div>
   </div>
 </div>
 
@@ -1197,11 +1589,19 @@
 <script src="scripts/account.js"></script>
 <script src="scripts/tasks.js"></script>
 <script src="scripts/workspace.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="assets/vendor/leaflet.js"></script>
+<script src="assets/vendor/echarts.min.js"></script>
+<script src="assets/vendor/xlsx.full.min.js"></script>
 <script src="scripts/map.js"></script>
-<script src="scripts/gis-workspace.js"></script>
-<script src="scripts/map-layer.js"></script>
-<script src="scripts/chat.js"></script>
+<script src="scripts/gis-workspace.js?v=20260814-result-layer-edit-3"></script>
+<script src="scripts/conversation-manager.js"></script>
+<script src="scripts/map-layer.js?v=20260814-carto-16"></script>
+<script src="scripts/map-toolbar.js"></script>
+<script src="scripts/map-interaction.js?v=20260814-carto-17"></script>
+<script src="scripts/cartography.js?v=20260814-carto-17"></script>
+<script src="scripts/artifact-viewer.js"></script>
+<script src="scripts/statistics-renderer.js"></script>
+<script src="scripts/chat.js?v=20260814-carto-16"></script>
 <script src="scripts/agents.js"></script>
 <script src="assets/vendor/pdf.min.js"></script>
 <script src="scripts/bootstrap.js"></script>

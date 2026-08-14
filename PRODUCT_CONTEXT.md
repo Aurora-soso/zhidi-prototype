@@ -23,11 +23,16 @@
 
 ### GIS 工作台
 
-- 中部为地图、搜索框、地图工具条和任务进度抽屉。
+- 中部为统一 Content Workspace，保持原三栏布局不变，并通过 `workspaceState.mode` 在 `map`、`image`、`document` 三种视图间原地切换；当前默认显示地图视图。
+- `scripts/workspace.js` 维护 `workspaceState`，并提供 `switchWorkspace(mode)`、`openArtifact(artifact)`、`setSelectedContext(context)` 和 `clearSelectedContext()` 作为统一入口。
+- 地图视图保留原地图、搜索框、地图工具条和任务进度抽屉，图片与文档视图作为后续 Artifact 展示容器，切换过程不刷新页面。
 - 地图优先初始化高德 JS API；缺少有效 Key 时保留演示兜底图。
 - 右侧为 AI 对话区，包含快捷问题、当前智能体信息、输入框、模型/权限展示和扩展菜单。
 - “工作空间”入口模拟桌面端文件夹选择，固定返回 `E:/GIS/project/`，并扫描生成建筑、道路、河流和土地利用四个矢量数据条目。
 - 工作空间路径和矢量文件状态由 `scripts/gis-workspace.js` 管理；图层选择、Leaflet 模拟加载与显隐状态由 `scripts/map-layer.js` 管理。
+- GIS 地图内部通过 `mapStage = workspace / result / manual-edit` 区分工作空间预览、Agent 结果审阅和手动编辑。结果态以继续询问 AI 为主，不显示破坏性删除；用户主动进入手动编辑后，才可新增、移动、节点调整、合并或删除 Agent 结果要素，并使用撤销、重做、取消和完成。
+- `scripts/map-interaction.js` 分别维护只读原始数据层、Agent 结果层和 Graphics 图形标注层。图形标注支持点、矩形、箭头、多边形和文字，可独立选择、删除并引用给 AI，不得与结果要素或原始数据混用。成果仅用于交互演示，不代表真实 GIS 分析结果。
+- 公文智能体演示由 `scripts/artifact-viewer.js` 维护结构化文档 Artifact、模拟 Word 渲染、整段或局部文字选择、局部文本与格式更新及单步撤销；`scripts/chat.js` 负责公文生成进度、成果卡片和修改建议路由。文档内容为交互演示数据，不执行真实 `.docx` 解析。
 
 ### 工具中心
 
@@ -80,8 +85,10 @@ scripts/tools.js           工具中心
 scripts/knowledge.js       知识库
 scripts/account.js         用户菜单、通知和设置
 scripts/tasks.js           保留的任务监控逻辑
-scripts/workspace.js       右侧对话面板收起/展开
+scripts/workspace.js       Content Workspace 状态、视图切换及右侧对话面板收起/展开
 scripts/map.js             地图初始化与地图工具
+scripts/map-interaction.js GIS 智能体模拟成果图层及轻量编辑
+scripts/artifact-viewer.js 公文 Artifact 渲染、选择、局部修改与撤销
 scripts/chat.js            AI 对话、扩展菜单和任务抽屉
 scripts/agents.js          智能体中心与智能体模态框
 scripts/bootstrap.js       首次数据渲染

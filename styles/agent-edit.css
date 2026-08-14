@@ -91,8 +91,7 @@
   }
   .aee-tag .x{cursor:pointer;font-size:13px;color:#059669;}
   .aee-tag .x:hover{color:var(--err);}
-  .aee-tags-input input{flex:1;min-width:120px;border:none;outline:none;font-size:13px;font-family:inherit;background:transparent;color:var(--t-title);}
-  .aee-tags-input input::placeholder{color:var(--t-ph);}
+  .aee-tags-input select{flex:1;min-width:140px;border:none;outline:none;font-size:13px;font-family:inherit;background:transparent;color:var(--t-title);cursor:pointer;appearance:none;-webkit-appearance:none;padding:2px 20px 2px 0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748B' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 2px center;}
 
   /* 提示词设置 */
   .aee-form-prompt{display:flex;flex-direction:column;gap:16px;}
@@ -275,6 +274,20 @@
   }
   .cap-tab:hover{color:var(--main);}
   .cap-tab.active{color:var(--main);font-weight:600;border-bottom-color:var(--main);}
+  /* 快捷检索标签栏（业务分类 chips） */
+  .cap-cats{
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+    padding:10px 20px 2px;flex-shrink:0;
+  }
+  .cap-cat-chip{
+    padding:5px 14px;border-radius:20px;border:1px solid #E2E8F0;background:#fff;
+    font-size:12px;font-family:inherit;color:var(--t-body);cursor:pointer;transition:.12s;
+  }
+  .cap-cat-chip:hover{border-color:var(--hl);color:var(--hl);background:rgba(6,182,212,.05);}
+  .cap-cat-chip.active{
+    border-color:var(--main);color:#fff;font-weight:600;
+    background:linear-gradient(90deg,var(--main),var(--hl));
+  }
   .cap-item{
     display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid #E2E8F0;border-radius:11px;
     background:#fff;cursor:pointer;transition:.12s;margin-bottom:8px;

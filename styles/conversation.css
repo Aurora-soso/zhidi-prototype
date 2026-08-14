@@ -1,0 +1,172 @@
+/* ============ 历史对话管理（文件树结构） ============ */
+
+/* 搜索框 */
+.conv-search{position:relative;margin:0 14px 8px;flex-shrink:0;}
+.conv-search input{
+  width:100%;padding:8px 12px 8px 32px;border:1px solid rgba(100,116,139,.18);
+  border-radius:10px;font-size:12.5px;font-family:inherit;outline:none;
+  background:rgba(255,255,255,.7);color:var(--t-title);transition:.15s;
+}
+.conv-search input:focus{border-color:var(--hl);box-shadow:0 0 0 3px rgba(6,182,212,.12);background:#fff;}
+.conv-search input::placeholder{color:var(--t-ph);}
+.conv-search .conv-search-ic{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--t-ph);}
+
+/* ── 文件树通用结构 ── */
+.tree-node{margin-bottom:1px;}
+
+/* 顶级分组（任务 / 空间）：标题行 */
+.tree-top-head{
+  display:flex;align-items:center;gap:5px;padding:9px 10px;margin:2px 6px 0;
+  border-radius:9px;cursor:pointer;transition:.12s;position:relative;
+  user-select:none;-webkit-user-select:none;
+}
+.tree-top-head:hover{background:rgba(255,255,255,.8);}
+.tree-top-head .tree-icon{font-size:14px;}
+.tree-top-head .tree-label{
+  font-size:13px;font-weight:700;color:var(--t-title);letter-spacing:.2px;
+}
+
+/* 顶级分组内容容器 */
+.tree-top-children{
+  overflow:hidden;
+  animation:treeExpand .18s ease;
+}
+
+/* 空间分组内的文件夹：二级缩进，与顶级分组头区分 */
+.tree-top-children .tree-head{
+  margin-left:10px;margin-right:6px;
+}
+.tree-top-children .tree-head .tree-label{
+  font-size:12.5px;font-weight:600;color:var(--t-body);
+}
+.tree-top-children .tree-head:hover .tree-label{color:var(--t-title);}
+
+/* 展开动画：淡入 + 轻微下滑 */
+@keyframes treeExpand{
+  from{opacity:0;transform:translateY(-3px);}
+  to{opacity:1;transform:none;}
+}
+
+/* 树节点头部（文件夹标题行） */
+.tree-head{
+  display:flex;align-items:center;gap:5px;padding:8px 10px;margin:0 6px;
+  border-radius:8px;cursor:pointer;transition:.12s;position:relative;
+  user-select:none;-webkit-user-select:none;
+}
+.tree-head:hover{background:rgba(255,255,255,.8);}
+
+/* 展开/折叠箭头 */
+.tree-caret{
+  width:14px;text-align:center;font-size:10px;color:var(--t-ph);
+  flex-shrink:0;transition:.15s;line-height:1;
+}
+
+/* 节点图标 */
+.tree-icon{font-size:14px;flex-shrink:0;width:18px;text-align:center;}
+
+/* 节点标签文字 */
+.tree-label{
+  flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--t-title);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+/* 文件夹节点内的「＋」新建按钮 */
+.tree-add-btn{
+  flex-shrink:0;width:20px;height:20px;border:none;border-radius:6px;background:transparent;
+  color:var(--t-body);font-size:14px;line-height:1;cursor:pointer;opacity:0;transition:.12s;padding:0;
+}
+.tree-head:hover .tree-add-btn{opacity:1;}
+.tree-add-btn:hover{background:rgba(16,185,129,.12);color:var(--main);}
+
+/* 子节点容器 */
+.tree-children{
+  overflow:hidden;
+  transition: height .2s ease;
+}
+
+/* ── 对话条目（树的叶子节点） ── */
+.conv-item{
+  display:flex;align-items:center;gap:6px;padding:7px 8px 7px 10px;margin:0 6px 2px;
+  border-radius:8px;cursor:pointer;font-size:13px;color:var(--t-title);transition:.1s;
+  border:1px solid transparent;position:relative;
+}
+.conv-item:hover{background:rgba(255,255,255,.75);}
+.conv-item.active{background:#fff;border-color:rgba(16,185,129,.25);box-shadow:var(--shadow);}
+.conv-item.active .conv-item-title{color:var(--main);font-weight:600;}
+
+/* 条目图标（📄 文件图标） */
+.conv-item-icon{flex-shrink:0;font-size:13px;width:16px;text-align:center;}
+
+.conv-item-title{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.conv-item-meta{flex-shrink:0;font-size:10.5px;color:var(--t-ph);}
+.conv-item-more{
+  flex-shrink:0;width:20px;height:20px;border:none;border-radius:6px;background:transparent;
+  color:var(--t-ph);font-size:14px;line-height:1;cursor:pointer;opacity:0;transition:.12s;padding:0;
+}
+.conv-item:hover .conv-item-more,.conv-item.active .conv-item-more{opacity:1;}
+.conv-item-more:hover{background:#F1F5F9;color:var(--t-title);}
+
+/* 空状态 */
+.conv-empty{padding:22px 12px;text-align:center;color:var(--t-ph);font-size:12px;line-height:1.6;}
+
+/* 右键/更多菜单 */
+.conv-menu{
+  position:fixed;z-index:400;min-width:172px;padding:5px;
+  background:#fff;border:1px solid rgba(100,116,139,.16);border-radius:12px;
+  box-shadow:0 12px 36px rgba(30,41,59,.18),0 2px 8px rgba(30,41,59,.08);
+  animation:convMenuIn .14s ease;
+}
+@keyframes convMenuIn{from{opacity:0;transform:translateY(-4px) scale(.98);}to{opacity:1;transform:none;}}
+.conv-menu-item{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 12px;border-radius:8px;font-size:12.5px;color:var(--t-title);
+  cursor:pointer;transition:.08s;white-space:nowrap;
+}
+.conv-menu-item:hover{background:rgba(16,185,129,.08);color:var(--main);}
+.conv-menu-item.danger{color:#DC2626;}
+.conv-menu-item.danger:hover{background:rgba(239,68,68,.08);color:#DC2626;}
+
+/* 项目空间选择弹窗内的空间列表 */
+.gis-space-list{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+.gis-space-item{
+  display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid #E2E8F0;
+  border-radius:10px;cursor:pointer;transition:.13s;background:#fff;
+}
+.gis-space-item:hover{border-color:var(--hl);box-shadow:0 2px 10px rgba(6,182,212,.1);}
+.gis-space-item.selected{border-color:var(--main);background:linear-gradient(135deg,#ECFDF5,#F0FDF4);}
+.gis-space-item .gsi-icon{font-size:18px;flex-shrink:0;}
+.gis-space-item .gsi-info{flex:1;min-width:0;}
+.gis-space-item .gsi-name{font-size:13px;font-weight:600;color:var(--t-title);}
+.gis-space-item .gsi-path{font-size:11px;color:var(--t-ph);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
+.gis-space-item .gsi-check{font-size:13px;color:var(--t-ph);}
+.gis-space-item.selected .gsi-check{color:var(--main);font-weight:700;}
+/* 工作空间锁定态 */
+.gis-space-item.locked{opacity:.55;cursor:not-allowed;}
+.gis-space-item.locked:hover{border-color:#E2E8F0;box-shadow:none;}
+.gis-space-lock-tip{padding:9px 12px;margin-bottom:12px;border:1px solid #FDE68A;background:#FFFBEB;border-radius:9px;font-size:12px;color:#B45309;}
+
+/* ── 响应式：侧栏收缩时树适配 ── */
+.sidebar.collapsed .tree-top-head{padding:8px 6px;margin:2px 2px 0;}
+.sidebar.collapsed .tree-head{padding:7px 6px;margin:0 2px;}
+.sidebar.collapsed .tree-caret,
+.sidebar.collapsed .tree-icon,
+.sidebar.collapsed .tree-label,
+.sidebar.collapsed .tree-add-btn{display:none;}
+.sidebar.collapsed .tree-top-head,
+.sidebar.collapsed .tree-head{justify-content:center;}
+.sidebar.collapsed .tree-top-children,
+.sidebar.collapsed .tree-children{display:none;}
+.sidebar.collapsed .conv-item{padding:6px 4px;margin:0 2px;}
+.sidebar.collapsed .conv-item-icon{display:none;}
+.sidebar.collapsed .conv-item-title{display:none;}
+.sidebar.collapsed .conv-item-meta{display:none;}
+.sidebar.collapsed .conv-item-more{display:none;}
+.sidebar.collapsed .conv-empty{display:none;}
+/* 移动端：搜索框与新建按钮更紧凑 */
+@media (max-width:640px){
+  .conv-search{margin:0 10px 6px;}
+  .tree-top-head{padding:8px 8px;margin:2px 4px 0;}
+  .tree-head{padding:7px 8px;margin:0 4px;}
+  .tree-top-children .tree-head{margin-left:8px;}
+  .conv-item{padding:6px 6px 6px 8px;margin:0 4px 2px;}
+}

@@ -4,16 +4,396 @@ let typingEl=null, stopped=false;
 function addBubble(role,text){
   const d=document.createElement('div'); d.className='bubble '+role;
   d.innerHTML=`<div class="av">${role==='ai'?'AI':'我'}</div><div class="txt">${text}</div>`;
-  chatBody.appendChild(d); chatBody.scrollTop=chatBody.scrollHeight; return d;
+  chatBody.appendChild(d); chatBody.scrollTop=chatBody.scrollHeight;
+  if(window.ConversationManager) window.ConversationManager.recordMessage(role, text);
+  return d;
 }
+function isGISDemoRequest(q){
+  return q.includes('福田') && q.includes('5000') && q.includes('商业用地');
+}
+function isStatisticsRequest(q){
+  // 统计类请求：统计 + 设施/个数/数量，或 设施 + 统计/数量
+  return /统计.*(设施|个数|数量)|(设施|要素).*(统计|数量)/.test(q);
+}
+function isDocumentGenerationRequest(q){
+  return /(生成|起草|撰写|写一份|帮我写)/.test(q) && /(通知|请示|通报|函|报告|纪要|批复|公文)/.test(q);
+}
+function appendDocumentProgress(){
+  const bubble=document.createElement('div');bubble.className='bubble ai document-progress-message';
+  bubble.innerHTML='<div class="av">AI</div><div class="txt"><div class="document-progress"><b>正在生成公文……</b><span data-document-step="0">◌ 分析公文类型</span><span data-document-step="1">○ 组织正文结构</span><span data-document-step="2">○ 校正文种格式与语体</span></div></div>';
+  chatBody.appendChild(bubble);chatBody.scrollTop=chatBody.scrollHeight;return bubble;
+}
+function addDocumentResultMessage(artifact){
+  const bubble=document.createElement('div');bubble.className='bubble ai';
+  bubble.innerHTML='<div class="av">AI</div><div class="txt">公文已生成，并已在内容工作区打开。<div class="document-result-card"><div class="document-result-card-main"><span class="document-result-card-icon">W</span><span class="document-result-card-info"><b></b><small>工作通知 · 约 860 字 · Word 文档</small></span></div><button type="button">打开文档</button></div></div>';
+  bubble.querySelector('.document-result-card-info b').textContent=artifact.fileName;bubble.querySelector('button').addEventListener('click',()=>window.DocumentArtifactViewer?.openDocument(artifact));chatBody.appendChild(bubble);chatBody.scrollTop=chatBody.scrollHeight;
+}
+function runDocumentGeneration(q){
+  stopped=false;stopBtn.style.display='inline-block';sendBtn.style.display='none';const progress=appendDocumentProgress();let step=0;
+  const advance=()=>{
+    if(stopped){progress.remove();stopBtn.style.display='none';sendBtn.style.display='inline-block';return;}
+    progress.querySelectorAll('[data-document-step]').forEach((item,index)=>{item.classList.toggle('done',index<=step);item.textContent=(index<=step?'✓ ':index===step+1?'◌ ':'○ ')+['分析公文类型','组织正文结构','校正文种格式与语体'][index];});step++;
+    if(step<3){setTimeout(advance,380);return;}
+    setTimeout(()=>{if(stopped){progress.remove();stopBtn.style.display='none';sendBtn.style.display='inline-block';return;}const artifact=window.DocumentArtifactViewer?.generateDocument(q);if(artifact)addDocumentResultMessage(artifact);stopBtn.style.display='none';sendBtn.style.display='inline-block';},320);
+  };setTimeout(advance,320);
+}
+function runDocumentRevision(q){
+  stopped=false;stopBtn.style.display='inline-block';sendBtn.style.display='none';const waiting=addBubble('ai','正在根据建议修改选中文段……');waiting.classList.add('typing');
+  const started=window.DocumentArtifactViewer?.applySuggestion(q,success=>{waiting.remove();addBubble('ai',success?'已根据建议完成修改，并保持了全文的公文语体和格式。':'未能定位选中的文段，请重新选择后再试。');stopBtn.style.display='none';sendBtn.style.display='inline-block';});
+  if(!started){waiting.remove();addBubble('ai','请先在文档中选择需要修改的文段或文字。');stopBtn.style.display='none';sendBtn.style.display='inline-block';}
+}
+function appendGISStatus(){
+  const bubble=document.createElement('div');bubble.className='bubble ai gis-progress-message';
+  bubble.innerHTML='<div class="av">AI</div><div class="txt"><div class="gis-status"><div class="gis-status-title">正在分析空间数据……</div><div class="gis-status-step running" data-gis-step="0"><span class="step-mark">◌</span>属性筛选</div><div class="gis-status-step" data-gis-step="1"><span class="step-mark">○</span>空间分析</div><div class="gis-status-step" data-gis-step="2"><span class="step-mark">○</span>生成矢量图层</div></div></div>';
+  chatBody.appendChild(bubble);chatBody.scrollTop=chatBody.scrollHeight;return bubble;
+}
+function completeGISStep(bubble,index){
+  bubble.querySelectorAll('.gis-status-step').forEach((step,i)=>{
+    step.classList.toggle('done',i<=index);step.classList.toggle('running',i===index+1);
+    step.querySelector('.step-mark').textContent=i<=index?'✓':i===index+1?'◌':'○';
+  });
+}
+function addGISResultMessage(){
+  const bubble=document.createElement('div');bubble.className='bubble ai';
+  bubble.innerHTML='<div class="av">AI</div><div class="txt">已完成筛选，共找到 37 个商业用地地块。<div class="gis-result-layer-note"><strong>图层说明：</strong>筛选结果已作为独立的“商业用地筛选结果”图层自动加载到图层管理器，并已设为当前选中图层。现在可直接在该图层上进行编辑；退出编辑后仍可在图层管理面板中统一进行可见性切换、排序、透明度调整和删除。</div><div class="gis-result-card"><div class="gis-result-card-main"><div class="gis-result-card-title">商业用地筛选结果</div><div class="gis-result-card-meta"><span>37 个要素</span><span>Polygon</span><span>已加载到图层管理</span><span>当前正在编辑</span></div></div><button type="button" data-gis-result-action="locate">定位到当前编辑图层</button></div></div>';
+  chatBody.appendChild(bubble);chatBody.scrollTop=chatBody.scrollHeight;
+  bubble.querySelector('[data-gis-result-action="locate"]').addEventListener('click',()=>window.MapResultInteraction?.locateResults());
+}
+function runGISDemo(){
+  stopped=false;stopBtn.style.display='inline-block';sendBtn.style.display='none';
+  const status=appendGISStatus();let step=0;
+  const advance=()=>{
+    if(stopped){status.remove();stopBtn.style.display='none';sendBtn.style.display='inline-block';return;}
+    completeGISStep(status,step);step++;
+    if(step<3){setTimeout(advance,420);return;}
+    setTimeout(()=>{
+      if(stopped){status.remove();stopBtn.style.display='none';sendBtn.style.display='inline-block';return;}
+      window.MapResultInteraction?.showResults();addGISResultMessage();
+      stopBtn.style.display='none';sendBtn.style.display='inline-block';
+    },360);
+  };
+  setTimeout(advance,380);
+}
+// ============ 统计请求（统计成都市不同类型设施的个数） ============
+function appendStatisticsStatus(){
+  const bubble=document.createElement('div');bubble.className='bubble ai stats-progress-message';
+  bubble.innerHTML='<div class="av">AI</div><div class="txt"><div class="stats-status"><div class="stats-status-title">正在查询空间数据……</div><div class="stats-status-step running" data-stats-step="0"><span class="step-mark">◌</span>连接空间数据库</div><div class="stats-status-step" data-stats-step="1"><span class="step-mark">○</span>分类统计设施要素</div><div class="stats-status-step" data-stats-step="2"><span class="step-mark">○</span>生成统计结果</div></div></div>';
+  chatBody.appendChild(bubble);chatBody.scrollTop=chatBody.scrollHeight;return bubble;
+}
+function completeStatsStep(bubble,index){
+  bubble.querySelectorAll('.stats-status-step').forEach((step,i)=>{
+    step.classList.toggle('done',i<=index);step.classList.toggle('running',i===index+1);
+    step.querySelector('.step-mark').textContent=i<=index?'✓':i===index+1?'◌':'○';
+  });
+}
+function addStatisticsResultMessage(){
+  const bubble=document.createElement('div');bubble.className='bubble ai';
+  bubble.innerHTML='<div class="av">AI</div><div class="txt"></div>';
+  chatBody.appendChild(bubble);chatBody.scrollTop=chatBody.scrollHeight;
+  if(window.StatisticsRenderer){
+    // 完整统计结果卡片（引言 / 可折叠表格 / 数据来源 / 三个操作按钮 / 图表区）
+    window.StatisticsRenderer.renderResult(bubble.querySelector('.txt'));
+  }else{
+    bubble.querySelector('.txt').textContent='已完成成都市设施分类统计（渲染组件未加载）。';
+  }
+}
+function runStatistics(){
+  stopped=false;stopBtn.style.display='inline-block';sendBtn.style.display='none';
+  const status=appendStatisticsStatus();let step=0;
+  const advance=()=>{
+    if(stopped){status.remove();stopBtn.style.display='none';sendBtn.style.display='inline-block';return;}
+    completeStatsStep(status,step);step++;
+    if(step<3){setTimeout(advance,430);return;}
+    setTimeout(()=>{
+      if(stopped){status.remove();stopBtn.style.display='none';sendBtn.style.display='inline-block';return;}
+      addStatisticsResultMessage();
+      stopBtn.style.display='none';sendBtn.style.display='inline-block';
+    },380);
+  };
+  setTimeout(advance,400);
+}
+
+// ============ 制图请求（现状用地图 / 规划图等） ============
+function isCartographyRequest(q){
+  return /(现状用地图|规划用地图|三线|制图|生成.*图).*(PNG|矢量|成果)/.test(q)
+    || /基于当前图层.*(生成|绘制|输出)/.test(q)
+    || /请.*生成.*图/.test(q);
+}
+function appendCartoStatus(){
+  const bubble=document.createElement('div');bubble.className='bubble ai carto-progress-message';
+  bubble.innerHTML='<div class="av">AI</div><div class="txt"><div class="carto-status"><div class="carto-status-title">正在生成《现状用地图》……</div><div class="carto-status-step running" data-carto-step="0"><span class="step-mark">◌</span>识别当前图层与用地类型</div><div class="carto-status-step" data-carto-step="1"><span class="step-mark">○</span>分类统计各地类面积与占比</div><div class="carto-status-step" data-carto-step="2"><span class="step-mark">○</span>生成《现状用地图》成果</div></div></div>';
+  chatBody.appendChild(bubble);chatBody.scrollTop=chatBody.scrollHeight;return bubble;
+}
+function completeCartoStep(bubble,index){
+  bubble.querySelectorAll('.carto-status-step').forEach((step,i)=>{
+    step.classList.toggle('done',i<=index);step.classList.toggle('running',i===index+1);
+    step.querySelector('.step-mark').textContent=i<=index?'✓':i===index+1?'◌':'○';
+  });
+}
+/** 构建统计摘要表格 HTML */
+function buildCartoStatsHTML(mapData){
+  if(!mapData?.categories) return '';
+  let rows=mapData.categories.map(c=>
+    `<tr><td><span class="carto-stats-color-swatch" style="background:${c.color};border-color:${c.strokeColor}"></span>${c.name}</td>`+
+    `<td>${c.area.toFixed(1)} ${mapData.unit}</td>`+
+    `<td>${(c.ratio*100).toFixed(1)}%</td>`+
+    `<td>${c.featureCount} 个</td></tr>`
+  ).join('');
+  return `<table class="carto-stats-table"><thead><tr><th>用地类型</th><th>面积</th><th>占比</th><th>地块数</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+function addCartographyResultMessage(mapData){
+  const bubble=document.createElement('div');bubble.className='bubble ai';
+  const statsHTML=buildCartoStatsHTML(mapData);
+  bubble.innerHTML=`<div class="av">AI</div><div class="txt">
+    已完成《${mapData.name||'现状用地图'}》的生成，共 ${mapData.features?.length||0} 个地块，总面积 ${mapData.totalArea?.toFixed(1)||'-'} ${mapData.unit||'公顷'}。
+    <div class="carto-layer-note"><strong>图层说明：</strong>已将结果作为独立新图层加载至地图并默认选中，可在图层管理中统一操作。当前已进入<strong>制图编辑模式</strong>——您可先在地图上选择、标注或手动编辑，完成后点击地图工具栏的<strong>「确认」</strong>按钮，我将引导您指定制图模板。</div>
+    ${statsHTML}
+    <div class="carto-result-card"><div class="carto-result-card-main"><span class="carto-result-card-icon">🗺️</span><span class="carto-result-card-info"><b>${mapData.name||'现状用地图'}</b><small>${mapData.features?.length||0} 个要素 · Polygon · 可编辑</small></span></div><div class="carto-result-actions"><button type="button" data-carto-action="locate">定位到图层</button></div></div></div>`;
+  chatBody.appendChild(bubble);chatBody.scrollTop=chatBody.scrollHeight;
+  // 绑定卡片按钮事件（模板/导出环节统一由「确认」按钮引导）
+  bubble.querySelector('[data-carto-action="locate"]')?.addEventListener('click',()=>window.MapResultInteraction?.locateResults?.());
+}
+function runCartography(){
+  stopped=false;stopBtn.style.display='inline-block';sendBtn.style.display='none';
+  templateSourcePending=false;  // 新请求重置模板来源等待状态
+  cartographyReady=false;       // 新请求重置导出就绪状态
+  const status=appendCartoStatus();let step=0;
+  // 获取来源图层（优先从工作空间取 landuse 图层）
+  const sourceLayer=(window.GISWorkspace?.getVectorLayers?.()||[]).find(l=>l.id==='landuse')||null;
+  const advance=()=>{
+    if(stopped){status.remove();stopBtn.style.display='none';sendBtn.style.display='inline-block';return;}
+    completeCartoStep(status,step);step++;
+    if(step<3){setTimeout(advance,450);return;}
+    setTimeout(()=>{
+      if(stopped){status.remove();stopBtn.style.display='none';sendBtn.style.display='inline-block';return;}
+      // 1. 生成数据
+      const mapData=window.Cartography?.generateLandUseMap(sourceLayer);
+      if(!mapData){status.remove();addBubble('ai','制图数据生成失败（模块未加载）。');stopBtn.style.display='none';sendBtn.style.display='inline-block';return;}
+      // 2. 注册为动态图层（面要素）
+      const layerConfig={
+        id:mapData.id,name:mapData.name,fileName:mapData.id+'.geojson',
+        type:'制图成果',geometryType:'面',
+        legend:`${mapData.categories.length} 类用地 · 总面积 ${mapData.totalArea.toFixed(1)} ${mapData.unit}`,
+        color:'#10B981',
+        editorFeatures:mapData.features,
+        featureCount:mapData.features.length
+      };
+      window.MapLayers?.registerDynamicLayer(layerConfig);
+      // 2.1 图层管理器默认选中该新图层（高亮 + 图例联动）
+      window.MapLayers?.selectLayer?.(mapData.id);
+      // 3. 更新模板图例
+      window.Cartography?.updateTemplateLegend(mapData);
+      // 4. 进入制图编辑模式
+      window.MapResultInteraction?.enterCartographyEdit(mapData);
+      // 5. 发送结果消息（提示用户编辑确认后进入模板环节）
+      addCartographyResultMessage(mapData);
+      // 6. 不自动询问模板：等待用户在地图上确认后（「确认」按钮）再引导模板来源
+      stopBtn.style.display='none';sendBtn.style.display='inline-block';
+    },380);
+  };
+  setTimeout(advance,420);
+}
+
+// ============ 模板来源选择（暂停等待交互） ============
+// 状态：等待用户选择模板来源时置 true，防止重复触发
+let templateSourcePending=false;
+/**
+ * 在对话中渲染「模板来源选择」卡片，暂停流程等待用户选择
+ * @param {Object} mapData 当前用地图数据
+ */
+function promptTemplateSource(mapData){
+  if(templateSourcePending)return;
+  templateSourcePending=true;
+  const bubble=document.createElement('div');bubble.className='bubble ai carto-source-message';
+  bubble.innerHTML=`<div class="av">AI</div><div class="txt">
+    <div class="carto-template-prompt">
+      <div class="carto-prompt-title">🖼️ 请指定制图模板</div>
+      <div class="carto-prompt-desc">《${mapData.name||'现状用地图'}》已生成并进入制图模式。套用模板前，请先选择模板来源：</div>
+      <div class="carto-source-options">
+        <button type="button" class="carto-source-option" data-carto-source="upload">
+          <span class="carto-source-icon">📁</span>
+          <span class="carto-source-text"><b>上传本地文件 / 指定路径</b><small>使用您本地的模板文件作为参考</small></span>
+          <span class="carto-source-arrow">›</span>
+        </button>
+        <button type="button" class="carto-source-option" data-carto-source="library">
+          <span class="carto-source-icon">📚</span>
+          <span class="carto-source-text"><b>从官方模板库选择</b><small>浏览 / 搜索官方资源库中的制图模板</small></span>
+          <span class="carto-source-arrow">›</span>
+        </button>
+      </div>
+      <div class="carto-prompt-hint">您也可以直接在输入框回复「上传模板」或「模板库」快速指定。</div>
+    </div></div>`;
+  chatBody.appendChild(bubble);chatBody.scrollTop=chatBody.scrollHeight;
+
+  // 绑定来源选项点击
+  bubble.querySelector('[data-carto-source="upload"]').addEventListener('click',()=>{
+    window.Cartography?.showUploadPanel?.();
+  });
+  bubble.querySelector('[data-carto-source="library"]').addEventListener('click',()=>{
+    window.Cartography?.showTemplateLibrary?.();
+  });
+  return bubble;
+}
+
+/**
+ * 模板添加成功后的确认与流程继续
+ * @param {Object} template 已添加的模板（含 name/source/sourceType）
+ */
+function confirmTemplateAdded(template){
+  if(!template)return;
+  const mapData=window.Cartography?.getState?.().currentMap;
+  const sourceLabel=template.sourceType==='upload'
+    ? `本地文件「${template.name}」`
+    : `官方模板库「${template.name}」`;
+  // 确认消息
+  addBubble('ai',`✓ 已添加模板${sourceLabel}，正在将其应用到《${mapData?.name||'现状用地图'}》图层……`);
+  // 渲染模板到地图
+  setTimeout(()=>{
+    if(template.sourceType==='library'){
+      window.Cartography?.renderTemplate(template, mapData);
+      window.Cartography?.updateTemplateLegend(mapData);
+      addBubble('ai',`模板「${template.name}」已应用到地图，可在图中预览效果。如需调整位置，可在图层上直接编辑。当前成果已就绪，如需导出 PNG 或矢量文件，回复「导出」即可。`);
+    }else{
+      // 本地上传模板：无内置 elements，渲染简化图框占位
+      const simpleTpl={
+        id:template.id,name:template.name,desc:template.desc,thumbnail:'📁',
+        elements:[
+          { type:'frame',x:10,y:10,width:980,height:680 },
+          { type:'title',x:500,y:668,text:'{mapTitle}',align:'center' },
+          { type:'legend',x:900,y:30,width:85,height:180 },
+          { type:'northArrow',x:940,y:240,size:30 },
+        ]
+      };
+      window.Cartography?.renderTemplate(simpleTpl, mapData);
+      window.Cartography?.updateTemplateLegend(mapData);
+      addBubble('ai',`本地模板「${template.name}」已加载并应用（已解析为简化图框，完整版式在正式版中支持）。可在图中预览并调整。当前成果已就绪，如需导出 PNG 或矢量文件，回复「导出」即可。`);
+    }
+    templateSourcePending=false;
+    cartographyReady=true;   // 制图成果就绪：支持对话导出指令
+    // 模板已应用：右上角主按钮由「确认」切换为「导出」
+    window.MapResultInteraction?.setCartoPrimaryButton?.('export');
+    addBubble('ai','模板已应用，右上角按钮已变为「导出」。点击即可导出 PNG 图片或可编辑矢量成果。');
+  },600);
+}
+// 注册模板添加回调：模板面板确认添加 → 本函数继续制图流程
+if(window.Cartography?.setTemplateAddedHandler){
+  window.Cartography.setTemplateAddedHandler(confirmTemplateAdded);
+}
+
+// 制图成果就绪状态（模板应用后可对话导出）
+let cartographyReady=false;
+
+// ============ 模板元素点选 → 智能体修改 ============
+// 选中提示统一由「选择元素栏」（map-selection-actions）展示，不再以 AI 回复提示。
+// 监听模板元素拖拽移动：对话确认已移动
+document.addEventListener('carto:template-element-moved', event=>{
+  const {label}=event.detail||{};
+  if(!label)return;
+  addBubble('ai',`已将【${label}】移动到新位置。可继续拖拽或描述其他修改；满意后回复「导出」即可导出图片。`);
+});
+
+// 颜色映射 + 位置映射（1000×700 画布坐标系）
+const TEMPLATE_COLOR_MAP={红:'#DC2626',蓝:'#2563EB',绿:'#16A34A',黑:'#111827',白:'#FFFFFF',橙:'#F59E0B',紫:'#7C3AED',灰:'#6B7280',黄:'#FACC15',金:'#D97706'};
+const TEMPLATE_POS_MAP={
+  '左上角':{x:30,y:40},'右上角':{x:930,y:40},'左下角':{x:30,y:640},'右下角':{x:930,y:640},
+  '左上':{x:30,y:40},'右上':{x:930,y:40},'左下':{x:30,y:640},'右下':{x:930,y:640},
+  '顶部':{y:40},'上方':{y:40},'底部':{y:640},'下方':{y:640},
+  '左侧':{x:30},'右侧':{x:930},'中间':{x:500,y:350},'中心':{x:500,y:350},
+};
+/**
+ * 解析针对选中模板元素的修改指令
+ * @param {Object} sel { idx, type, label, element }
+ * @param {string} q 用户输入
+ * @returns {{changes:Object,description:string}|null}
+ */
+function applyTemplateEditCommand(sel,q){
+  const type=sel.type,el=sel.element||{},changes={};
+  let desc=[];
+  // 1. 位置移动
+  for(const key of Object.keys(TEMPLATE_POS_MAP)){
+    if(q.includes(key)){Object.assign(changes,TEMPLATE_POS_MAP[key]);desc.push('移动至'+key);break;}
+  }
+  // 2. 文字内容（标题 / 文字注记）
+  if(type==='title'||type==='textBlock'){
+    const quoted=q.match(/[“"『「]([^"”』」]{1,30})[”"』」]/);
+    if(quoted&&!/图框|指北针|图例|比例尺|移到/.test(quoted[1])){changes.text=quoted[1];desc.push(`文字改为「${quoted[1]}」`);}
+  }
+  // 3. 字号
+  if(/放大|大一点|大些|加大/.test(q)){changes.fontSize=(el.fontSize||12)+4;desc.push('字号加大');}
+  else if(/缩小|小一点|小些|减小/.test(q)){changes.fontSize=Math.max(8,(el.fontSize||12)-4);desc.push('字号缩小');}
+  // 4. 颜色（按元素类型）
+  for(const c of Object.keys(TEMPLATE_COLOR_MAP)){
+    if(q.includes(c+'色')||q.includes('改成'+c)||q.includes('变'+c)){
+      if(type==='title'||type==='textBlock'){changes.fill=TEMPLATE_COLOR_MAP[c];desc.push('颜色改为'+c+'色');}
+      else if(type==='frame'||type==='innerFrame'){changes.stroke=TEMPLATE_COLOR_MAP[c];desc.push('边框改为'+c+'色');}
+      else if(type==='northArrow'){changes.fill=TEMPLATE_COLOR_MAP[c];desc.push('指北针改为'+c+'色');}
+      break;
+    }
+  }
+  // 5. 加粗（文字类）
+  if(/加粗|粗一点/.test(q)&&(type==='title'||type==='textBlock')){changes.bold=true;desc.push('已加粗');}
+  // 6. 比例尺加长 / 缩短
+  if(type==='scaleBar'){
+    if(/加长|更长|长一点/.test(q)){changes.width=(el.width||100)+40;desc.push('比例尺加长');}
+    else if(/缩短|更短|短一点/.test(q)){changes.width=Math.max(60,(el.width||100)-40);desc.push('比例尺缩短');}
+  }
+  // 7. 指北针大小
+  if(type==='northArrow'){
+    if(/大一点|放大|加大/.test(q)&&!desc.length){changes.size=(el.size||24)+8;desc.push('指北针加大');}
+    else if(/小一点|缩小/.test(q)&&!desc.length){changes.size=Math.max(14,(el.size||24)-8);desc.push('指北针缩小');}
+  }
+  if(!Object.keys(changes).length)return null;
+  return {changes,description:desc.join('、')};
+}
+
 function aiReply(q){
+  // 模板元素修改：优先取地图上选中的模板要素，其次取「询问AI」加入上下文的模板要素
+  let tplSel=window.Cartography?.getSelectedTemplateElement?.();
+  const tplCtx=window.workspaceState?.selectedContext;
+  if(!tplSel&&tplCtx?.type==='template-element'){
+    tplSel={idx:tplCtx.templateIdx,type:tplCtx.elementType,label:tplCtx.label,element:tplCtx.element||{}};
+  }
+  if(tplSel){
+    const result=applyTemplateEditCommand(tplSel,q);
+    if(result){
+      window.Cartography?.updateTemplateElement?.(tplSel.idx,result.changes);
+      addBubble('ai',`已修改【${tplSel.label}】：${result.description}。可在图中预览效果，继续点选元素或描述修改；满意后回复「导出」即可导出图片。`);
+      return;
+    }
+    if(/修改|调整|改|移动|设置|换/.test(q)){
+      addBubble('ai',`暂未理解针对【${tplSel.label}】的修改指令。可尝试：改变标题文字（"把标题改为《xxx》"）、移到某个角落（"指北针移到右上角"）、调整字号（"标题放大"）、更换颜色（"图框边框改成蓝色"）。`);
+      return;
+    }
+  }
+  // 制图成果就绪：回复「导出」打开导出面板（PNG / 矢量）
+  if(cartographyReady&&/导出|下载|PNG/.test(q)){
+    addBubble('ai','好的，为您打开成果导出面板（支持 PNG 图片与 GeoJSON 可编辑矢量两种格式）。');
+    window.Cartography?.showExportPanel?.();
+    return;
+  }
+  // 模板来源等待期间：支持直接回复文字快速指定来源
+  if(templateSourcePending){
+    if(/上传|本地|路径|文件/.test(q)){addBubble('ai','好的，为您打开本地模板上传面板。');window.Cartography?.showUploadPanel?.();return;}
+    if(/模板库|官方/.test(q)){addBubble('ai','好的，为您打开官方模板库。');window.Cartography?.showTemplateLibrary?.();return;}
+  }
+  if(isDocumentGenerationRequest(q)){runDocumentGeneration(q);return;}
+  if(isGISDemoRequest(q)){runGISDemo();return;}
+  if(isStatisticsRequest(q)){runStatistics();return;}
+  if(isCartographyRequest(q)){runCartography();return;}
+  if(window.workspaceState?.selectedContext?.type==='document-text'){runDocumentRevision(q);return;}
   stopped=false; stopBtn.style.display='inline-block'; sendBtn.style.display='none';
   typingEl=document.createElement('div'); typingEl.className='bubble ai typing';
   typingEl.innerHTML=`<div class="av">AI</div><div class="txt"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>`;
   chatBody.appendChild(typingEl); chatBody.scrollTop=chatBody.scrollHeight;
   setTimeout(()=>{
     if(stopped){ typingEl.remove(); stopBtn.style.display='none'; sendBtn.style.display='inline-block'; return; }
-    const reply = q.includes('合规')?'已圈选范围：该地块 82% 位于城镇开发边界内，叠加上传的"生态红线"图层后，西南角约 3.6 公顷触及缓冲带，建议调整布局或办理占补平衡。'
+    const selectedContext=window.workspaceState?.selectedContext;
+    const mapContext=selectedContext?.type==='map-features'?selectedContext:null;
+    const graphicContext=/^map-graphic/.test(selectedContext?.type||'')?selectedContext:null;
+    const reply = mapContext&&q.includes('重新分析')?'已根据选中区域重新执行空间分析，当前未发现新增遗漏地块（模拟）。'
+      : graphicContext&&/重新分析|分析/.test(q)?'已根据地图标注范围重新分析，该区域包含 6 个待复核地块（模拟）。'
+      : mapContext&&q.includes('导出')?`已整理选中的 ${mapContext.count} 个地块，已生成独立导出任务（模拟）。`
+      : q.includes('合规')?'已圈选范围：该地块 82% 位于城镇开发边界内，叠加上传的"生态红线"图层后，西南角约 3.6 公顷触及缓冲带，建议调整布局或办理占补平衡。'
       : q.includes('面积')?'A 地块投影面积测算为 12.48 公顷（187.2 亩），周长 1.62 km。'
       : q.includes('图层')?'已叠加"生态红线""永久基本农田"图层，可在左侧图层管理调整透明度。'
       : q.includes('图')?'正在生成《用地用海规划图》，预计 8 秒后输出至资源库。'
@@ -25,9 +405,14 @@ function aiReply(q){
 }
 function send(){
   const v=$('#chatText').value.trim(); if(!v) return;
+  const CM=window.ConversationManager;
+  if(CM && !CM.getCurrentConversation()) CM.createConversation();
+  const cur=CM && CM.getCurrentConversation();
+  const isFirst=cur && cur.messageCount===0;
   const ref = chatFileRefName ? '📎 引用文件：'+chatFileRefName+'\n' : '';
   addBubble('user', ref+v); $('#chatText').value='';
-  qcActiveLabel=null; renderQcTag(); renderQcSubtasks();   // 发送后解绑快捷指令
+  if(isFirst && CM) CM.renameConversation(cur.id, CM.generateConversationTitle(v));
+  qcActiveLabel=null; renderQcTag(); renderQuickCommands();   // 发送后解绑快捷指令
   aiReply(v);
 }
 sendBtn.addEventListener('click',send);
@@ -62,10 +447,34 @@ function restoreChatFileRef(){
 }
 window.restoreChatFileRef = restoreChatFileRef;
 restoreChatFileRef();
+function renderDocumentContextTag(){
+  const context=window.workspaceState?.selectedContext,tag=$('#documentContextTag');
+  if(!tag)return;if(context?.type==='document-text'){
+    tag.hidden=false;$('#documentContextTitle').textContent=context.selectionMode==='paragraph'?'已引用选中文段':'已引用选中文字';$('#documentContextExcerpt').textContent='“'+context.text.replace(/\s+/g,' ').slice(0,54)+(context.text.length>54?'…':'')+'”';
+  }else if(context?.type==='map-features'){
+    tag.hidden=false;$('#documentContextTitle').textContent='已引用地图要素 · '+context.count+' 个';$('#documentContextExcerpt').textContent=context.layerName;
+  }else if(/^map-graphic/.test(context?.type||'')){
+    tag.hidden=false;$('#documentContextTitle').textContent='已引用地图标注区域';$('#documentContextExcerpt').textContent=context.label||context.graphicType||'图形标注';
+  }else if(context?.type==='template-element'){
+    // 模板要素引用：与文档/图块要素一致，以 document-context-tag 形式展示
+    tag.hidden=false;$('#documentContextTitle').textContent=`已引用模板要素「${context.label}」`;$('#documentContextExcerpt').textContent='可输入修改指令（改文字 / 移位 / 换色 / 缩放），或直接拖动调整';
+  }else{tag.hidden=true;$('#documentContextExcerpt').textContent='';}
+}
+document.addEventListener('workspace:context-change',renderDocumentContextTag);
+$('#documentContextClose').addEventListener('click',()=>clearSelectedContext());
+renderDocumentContextTag();
+document.addEventListener('map:manual-edit-finished',event=>{
+  addBubble('ai',`已完成手动修订，当前结果包含 ${event.detail.featureCount} 个地块和 ${event.detail.graphicCount} 个图形标注。`);
+});
 $('#chatText').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); send(); } });
 stopBtn.addEventListener('click',()=>{ stopped=true; });
-$('#chNew').addEventListener('click',()=>{ chatBody.innerHTML='<div class="bubble ai"><div class="av">AI</div><div class="txt">已开启新对话，有什么可以帮你的？</div></div>'; toast('新建对话'); });
-document.querySelectorAll('.quick .q').forEach(q=>q.addEventListener('click',()=>{ addBubble('user',q.textContent); aiReply(q.textContent); }));
+$('#chNew').addEventListener('click',()=>{ if(window.ConversationManager) window.ConversationManager.createConversation(); });
+chatBody.addEventListener('click',e=>{
+  const q=e.target.closest('.quick .q');
+  if(!q) return;
+  addBubble('user',q.textContent);
+  aiReply(q.textContent);
+});
 
 // ============ 对话区智能体信息栏 ============
 // 当前对话智能体（对话区信息栏展示对象）
@@ -317,7 +726,6 @@ function modelItemHTML(m, isCustom){
     <div class="mi-radio"></div>
     <div class="mi-info">
       <div class="mi-name">${m.name}${badge}${tag}</div>
-      <div class="mi-desc">${m.desc}</div>
     </div>
   </div>`;
 }
@@ -360,19 +768,144 @@ $('#modelClose').addEventListener('click', closeModelPopup);
 $('#modelMask').addEventListener('click', e=>{ if(e.target.id==='modelMask') closeModelPopup(); });
 window.addEventListener('resize',()=>{if($('#modelMask').classList.contains('show'))positionModelPopup();});
 
-// 模块三：添加自定义模型（跳转独立配置页）
-$('#modelConfigBtn').addEventListener('click', ()=>{ closeModelPopup(); switchPage('model-config'); });
-// 大模型配置页：保存 / 返回
-$('#mcBackBtn').addEventListener('click', ()=> switchPage('workbench'));
-$('#mcCancelBtn').addEventListener('click', ()=> switchPage('workbench'));
-$('#mcSaveBtn').addEventListener('click', ()=>{
-  const name=$('#mcName').value.trim(); if(!name){ toast('请填写模型名称'); return; }
-  const provider=$('#mcProvider').value;
-  const desc=$('#mcDesc').value.trim() || ('用户自定义配置的大模型（'+provider+'）。');
-  customModels.push({id:'c'+Date.now(), name, desc});
-  $('#mcName').value=''; $('#mcEndpoint').value=''; $('#mcKey').value=''; $('#mcDesc').value='';
-  switchPage('workbench'); toast('已添加自定义模型「'+name+'」');
+// ============ 添加模型弹窗（统一入口） ============
+let mcEditingId = null;  // null=新增模式, 否则为编辑目标 id
+
+const PROVIDER_NAMES = {
+  'tencent-cloud': '腾讯云 Token Plan',
+  'openai':       'OpenAI',
+  'tongyi':       '通义千问',
+  'zhipu':        '智谱 GLM',
+  'anthropic':    'Anthropic',
+  'google':       'Google',
+  'custom':       '自建 / 其他兼容',
+};
+
+function openMcModal(editId){
+  mcEditingId = editId || null;
+  const mask=$('#mcModalMask');
+  // 重置或回填表单
+  if(mcEditingId){
+    const m = customModels.find(x=>x.id===mcEditingId);
+    if(m){ $('#mcModalProvider').value=m.provider||''; $('#mcModalApiKey').value=m.apiKey||''; $('#mcModalModelName').value=m.modelName||'Auto'; }
+    $('#mcModalSave').textContent='保存';
+  } else {
+    $('#mcModalProvider').value=''; $('#mcModalApiKey').value=''; $('#mcModalModelName').value='Auto';
+    $('#mcModalSave').textContent='保存';
+  }
+  $('#mcModalApiKey').type='password';
+  mask.classList.add('show');
+}
+function closeMcModal(){ $('#mcModalMask').classList.remove('show'); mcEditingId=null; }
+
+// API Key 显隐切换
+$('#mcEyeBtn').addEventListener('click', ()=>{
+  const inp=$('#mcModalApiKey');
+  inp.type = inp.type==='password' ? 'text' : 'password';
 });
+
+// 弹窗关闭
+$('#mcModalClose').addEventListener('click', closeMcModal);
+$('#mcModalCancel').addEventListener('click', closeMcModal);
+$('#mcModalMask').addEventListener('click', e=>{ if(e.target.id==='mcModalMask') closeMcModal(); });
+
+// 弹窗保存
+$('#mcModalSave').addEventListener('click', ()=>{
+  const provider=$('#mcModalProvider').value;
+  if(!provider){ toast('请选择提供商'); return; }
+  const apiKey=$('#mcModalApiKey').value.trim();
+  if(!apiKey){ toast('请输入 API Key'); return; }
+  const modelName=$('#mcModalModelName').value;
+  const displayName = modelName==='Auto' ? 'Auto' : modelName;
+
+  const data = {
+    provider,
+    apiKey,
+    modelName: displayName,
+    name: `${PROVIDER_NAMES[provider]||provider} / ${displayName}`,
+    desc: `${PROVIDER_NAMES[provider]||provider} / ${displayName}（个人版）`,
+  };
+
+  if(mcEditingId){
+    // 编辑模式
+    const idx = customModels.findIndex(x=>x.id===mcEditingId);
+    if(idx>=0){ customModels[idx]={...customModels[idx], ...data}; }
+    toast('模型已更新');
+  } else {
+    // 新增模式
+    customModels.push({id:'c'+Date.now(), ...data});
+    toast('已添加自定义模型「'+data.name+'」');
+  }
+  saveCustomModels();
+  renderMcSavedList();
+  renderModelCustom(); updateCiModelLabel();
+  closeMcModal();
+});
+
+// 模块三：model-foot → 打开配置页
+$('#modelConfigBtn').addEventListener('click', ()=>{ closeModelPopup(); switchPage('model-config'); });
+// 配置页：返回
+$('#mcBackBtn').addEventListener('click', ()=> switchPage('workbench'));
+// 配置页：添加模型按钮 → 弹出弹窗
+$('#mcAddModelBtn').addEventListener('click', ()=> openMcModal());
+
+// ============ 已保存模型列表渲染 & CRUD ============
+function saveCustomModels(){
+  try{ localStorage.setItem('wb_custom_models', JSON.stringify(customModels)); }catch(e){}
+}
+function loadCustomModels(){
+  try{ const raw=localStorage.getItem('wb_custom_models'); if(raw) customModels=JSON.parse(raw); }catch(e){}
+}
+
+function renderMcSavedList(){
+  const list=$('#mcSavedList'), empty=$('#mcEmptyState');
+  if(customModels.length===0){
+    list.innerHTML=''; empty.style.display='';
+    return;
+  }
+  empty.style.display='none';
+  list.innerHTML = customModels.map(m => `
+    <div class="mc-saved-item" data-id="${m.id}">
+      <div class="mc-saved-icon">☁</div>
+      <div class="mc-saved-info">
+        <div class="mc-saved-name">${m.name}</div>
+        <div class="mc-saved-desc">${m.desc}</div>
+      </div>
+      <div class="mc-saved-actions">
+        <button class="mc-action-btn edit" title="编辑">✎</button>
+        <button class="mc-action-btn delete" title="删除">🗑</button>
+      </div>
+    </div>`).join('');
+
+  // 绑定编辑/删除事件
+  list.querySelectorAll('.mc-saved-item').forEach(el=>{
+    el.querySelector('.edit').addEventListener('click', (e)=>{
+      e.stopPropagation(); openMcModal(el.closest('.mc-saved-item').dataset.id);
+    });
+    el.querySelector('.delete').addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const id=el.closest('.mc-saved-item').dataset.id;
+      customModels = customModels.filter(x=>x.id!==id);
+      saveCustomModels();
+      renderMcSavedList(); renderModelCustom(); updateCiModelLabel();
+      toast('已删除该模型');
+    });
+  });
+}
+
+// 进入配置页时刷新列表
+const _origSwitchPage = typeof switchPage !== 'undefined' ? switchPage : function(n){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const target=document.getElementById('page-'+n); if(target) target.classList.add('active');
+};
+// 用 Monkey-patch 方式注入刷新逻辑
+window.switchPage = function(name){
+  _origSwitchPage(name);
+  if(name==='model-config'){ loadCustomModels(); renderMcSavedList(); }
+};
+
+// 初始化
+loadCustomModels();
 renderModelOfficial(); renderModelCustom(); updateCiModelLabel();
 
 // ============ 对话区 + 弹出菜单 ============
@@ -418,3 +951,39 @@ document.addEventListener('click',e=>{ if(!ciMenu.contains(e.target)&&!$('#ciPlu
 // 终止按钮默认隐藏
 stopBtn.style.display='none';
 
+// ============ 自动化验证钩子（URL hash 含 autostats 时自动执行统计流程） ============
+if(location.hash.includes('autostats')){
+  setTimeout(()=>{ $('#chatText').value='统计成都市不同类型设施的个数'; send(); }, 600);
+  setTimeout(()=>{ document.querySelector('[data-stats-action="chart"]')?.click(); }, 4800);
+  setTimeout(()=>{ document.querySelector('[data-stats-action="layer"]')?.click(); }, 7200);
+  setTimeout(()=>{ document.querySelector('[data-tool="layer-manager"]')?.click(); }, 8600); // 打开显示管理抽屉
+  setTimeout(()=>{
+    const layers=document.getElementById('lmmToggleLayers'),legend=document.getElementById('lmmToggleLegend'),drawer=document.querySelector('[data-map-drawer="layer-manager"]');
+    document.body.setAttribute('data-lmm-state', JSON.stringify({layersChecked:layers?.checked,legendChecked:legend?.checked,drawerOpen:!drawer?.hidden,panelOpen:window.MapLayers?.isOpen?.(),legendVisible:window.MapLayers?.isLegendVisible?.()}));
+  }, 9000);
+  if(location.hash.includes('legend-off')){
+    setTimeout(()=>{ const el=document.getElementById('lmmToggleLegend'); if(el&&el.checked) el.click(); }, 9800); // 关闭图例开关
+  }
+  if(location.hash.includes('lmm-close')){
+    setTimeout(()=>{ window.MapToolDrawer?.close('layer-manager'); }, 9800); // 通过 API 关闭显示管理抽屉
+    setTimeout(()=>{ const drawer=document.querySelector('[data-map-drawer="layer-manager"]'),btn=document.querySelector('[data-tool="layer-manager"]'); document.body.setAttribute('data-lmm-state', JSON.stringify({drawerOpen:!drawer?.hidden,pressed:btn?.getAttribute('aria-pressed'),expanded:btn?.getAttribute('aria-expanded')})); }, 10100);
+  }
+  if(location.hash.includes('legend-independent')){
+    // 独立性验证：图例开关 OFF 后，反复切换图层开关，图例开关/图例可见性必须保持不变
+    setTimeout(()=>{ const el=document.getElementById('lmmToggleLegend'); if(el&&el.checked) el.click(); }, 9000);  // 图例 OFF
+    setTimeout(()=>{ document.getElementById('lmmToggleLayers')?.click(); }, 9400);  // 图层面板 开→关
+    setTimeout(()=>{ document.getElementById('lmmToggleLayers')?.click(); }, 9600);  // 图层面板 关→开
+    setTimeout(()=>{
+      const layers=document.getElementById('lmmToggleLayers'),legend=document.getElementById('lmmToggleLegend');
+      document.body.setAttribute('data-lmm-state', JSON.stringify({layersChecked:layers?.checked,legendChecked:legend?.checked,panelOpen:window.MapLayers?.isOpen?.(),legendVisible:window.MapLayers?.isLegendVisible?.()}));
+    }, 9900);
+  }
+  if(location.hash.includes('legend-close')){
+    // 图例右上角关闭按钮：点击后图例隐藏，且抽屉内图例开关同步为 OFF
+    setTimeout(()=>{ document.querySelector('[data-legend-close]')?.click(); }, 9000);
+    setTimeout(()=>{
+      const legendEl=document.getElementById('mapLegend'),legend=document.getElementById('lmmToggleLegend');
+      document.body.setAttribute('data-lmm-state', JSON.stringify({legendHidden:legendEl?.hidden,legendChecked:legend?.checked,legendVisible:window.MapLayers?.isLegendVisible?.()}));
+    }, 9400);
+  }
+}

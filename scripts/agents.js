@@ -511,6 +511,8 @@ function renderTags(){
   list.querySelectorAll('.x').forEach(x=>{
     x.addEventListener('click',()=>{ agentFormDraft.tags.splice(parseInt(x.dataset.idx),1); renderTags(); });
   });
+  const sel=$('#aeeTagInput');
+  if(sel && sel.tagName==='SELECT'){ sel.value=tags[0]||'全部'; }
 }
 
 // ============ 能力配置：表单选择器模式 ============
@@ -578,19 +580,43 @@ function renderPickedTools(){
 
 // ============ 选择智能体弹窗 ============
 let pickerAgentTab='mine';
+let pickerAgentCat='';       // ''=全部，否则为业务分类 cat
 let pickerTempIds=[];
+
+// 渲染快捷检索标签栏（按业务分类）
+function renderAgentCatChips(){
+  const wrap=$('#capAgentCats');
+  const cats=[...new Set([...myAgents,...squareAgents].map(a=>a.cat).filter(Boolean))];
+  const chips=['',...cats].map(c=>`
+    <button class="cap-cat-chip${pickerAgentCat===c?' active':''}" data-cat="${c}" type="button">${c===''?'全部':c}</button>
+  `).join('');
+  wrap.innerHTML=chips;
+  wrap.querySelectorAll('.cap-cat-chip').forEach(ch=>{
+    ch.addEventListener('click',()=>{
+      pickerAgentCat=ch.dataset.cat;
+      wrap.querySelectorAll('.cap-cat-chip').forEach(x=>x.classList.toggle('active',x===ch));
+      renderAgentPickerList();
+    });
+  });
+}
+
 function openAgentPicker(){
   pickerTempIds=[...(agentFormDraft.callableAgentIds||[])];
   pickerAgentTab='mine';
+  pickerAgentCat='';
   document.querySelectorAll('#capAgentTabs .cap-tab').forEach(t=>t.classList.toggle('active',t.dataset.src==='mine'));
   $('#capAgentSearch').value='';
   $('#capAgentMask').classList.add('show');
+  renderAgentCatChips();
   renderAgentPickerList();
 }
 function renderAgentPickerList(){
   const q=($('#capAgentSearch').value||'').trim().toLowerCase();
   const src = pickerAgentTab==='mine' ? myAgents : squareAgents;
-  const list=src.filter(a=>!q || a.name.toLowerCase().includes(q) || (a.desc||'').toLowerCase().includes(q) || a.cat.toLowerCase().includes(q));
+  const list=src.filter(a=>
+    (!q || a.name.toLowerCase().includes(q) || (a.desc||'').toLowerCase().includes(q) || a.cat.toLowerCase().includes(q)) &&
+    (!pickerAgentCat || a.cat===pickerAgentCat)
+  );
   const wrap=$('#capAgentList');
   wrap.innerHTML=list.length ? list.map(a=>{
     const checked=pickerTempIds.includes(a.id)?'checked':'';
@@ -623,10 +649,32 @@ function confirmAgentPicker(){
 
 // ============ 选择原子工具弹窗 ============
 let pickerTempTools=[];
+let pickerToolCat='';        // ''=全部，否则为工具分组
+
+// 渲染快捷检索标签栏（按工具分组）
+function renderToolCatChips(){
+  const wrap=$('#capToolCats');
+  const tools=getEnabledAtomTools();
+  const groups=[...new Set(tools.map(t=>getToolIconInfo(t.name).group).filter(Boolean))];
+  const chips=['',...groups].map(g=>`
+    <button class="cap-cat-chip${pickerToolCat===g?' active':''}" data-cat="${g}" type="button">${g===''?'全部':g}</button>
+  `).join('');
+  wrap.innerHTML=chips;
+  wrap.querySelectorAll('.cap-cat-chip').forEach(ch=>{
+    ch.addEventListener('click',()=>{
+      pickerToolCat=ch.dataset.cat;
+      wrap.querySelectorAll('.cap-cat-chip').forEach(x=>x.classList.toggle('active',x===ch));
+      renderToolPickerList();
+    });
+  });
+}
+
 function openToolPicker(){
   pickerTempTools=[...(agentFormDraft.atomToolNames||[])];
+  pickerToolCat='';
   $('#capToolSearch').value='';
   $('#capToolMask').classList.add('show');
+  renderToolCatChips();
   renderToolPickerList();
 }
 // 已添加且启用的原子工具（复用「原子工具中心」数据源，禁止另造）
@@ -636,7 +684,10 @@ function getEnabledAtomTools(){
 }
 function renderToolPickerList(){
   const q=($('#capToolSearch').value||'').trim().toLowerCase();
-  const tools=getEnabledAtomTools().filter(t=>!q || t.name.toLowerCase().includes(q));
+  const tools=getEnabledAtomTools().filter(t=>
+    (!q || t.name.toLowerCase().includes(q)) &&
+    (!pickerToolCat || getToolIconInfo(t.name).group===pickerToolCat)
+  );
   const wrap=$('#capToolList');
   wrap.innerHTML=tools.length ? tools.map(t=>{
     const checked=pickerTempTools.includes(t.name)?'checked':'';
@@ -705,17 +756,11 @@ function bindAgentFormEvents(){
     $('#aeeDescCount').textContent=e.target.value.length+'/500';
   });
 
-  // 标签
-  $('#aeeTagInput').addEventListener('keydown',e=>{
-    if(e.key==='Enter'){
-      e.preventDefault();
-      const v=e.target.value.trim();
-      if(!v) return;
-      if(agentFormDraft.tags.length>=10){ toast('最多 10 个标签'); return; }
-      if(v.length>16){ toast('单个标签不超过 16 字符'); return; }
-      if(!agentFormDraft.tags.includes(v)){ agentFormDraft.tags.push(v); renderTags(); }
-      e.target.value='';
-    }
+  // 标签（单选分类下拉）
+  $('#aeeTagInput').addEventListener('change',e=>{
+    const cat=e.target.options[e.target.selectedIndex].dataset.cat;
+    agentFormDraft.tags = (cat==='全部') ? [] : [cat];
+    renderTags();
   });
 
   // 提示词
@@ -867,9 +912,11 @@ $('#aeePickToolsBtn').addEventListener('click', openToolPicker);
 document.querySelectorAll('#capAgentTabs .cap-tab').forEach(t=>{
   t.addEventListener('click',()=>{
     pickerAgentTab=t.dataset.src;
+    pickerAgentCat='';
     document.querySelectorAll('#capAgentTabs .cap-tab').forEach(x=>x.classList.remove('active'));
     t.classList.add('active');
     $('#capAgentSearch').value='';
+    renderAgentCatChips();
     renderAgentPickerList();
   });
 });

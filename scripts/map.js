@@ -1,9 +1,13 @@
 // ============ 地图（Leaflet + OpenStreetMap，免 key 方案） ============
 // 演示用，无需注册 / 无需 Key / 无域名白名单限制。
 // 后续接入高德时，只需替换 initMap 与工具条部分，外部调用（core.js 中 initMap()）不变。
-let map = null, drawMode = null, drawPts = [], drawPreview = null, drawLayer = null;
+let map = null, drawMode = null, drawPts = [], drawPreview = null, drawLayer = null, measureLayer = null;
 
 function initMap(){
+  if(map){
+    if(typeof map.invalidateSize === 'function') map.invalidateSize();
+    return map;
+  }
   if(typeof L === 'undefined'){
     $('#mapBadge').textContent = '地图模式：加载失败（Leaflet 未引入）';
     return;
@@ -22,8 +26,11 @@ function initMap(){
   }
 }
 
+// 工作台默认可见，脚本加载完成后即初始化；登录流程再次调用时保持幂等。
+initMap();
+
 function setActiveBtn(t){
-  document.querySelectorAll('.mt-btn').forEach(x=>x.classList.toggle('active', x.dataset.tool === t));
+  document.querySelectorAll('.map-tool-action').forEach(x=>x.classList.toggle('active', x.dataset.tool === t));
 }
 
 function clearDraw(){
@@ -45,8 +52,18 @@ function onMapClick(e){
 
   // 打点：点击即生成 marker
   if(drawMode === 'point'){
-    L.marker(e.latlng).addTo(map).bindPopup('已标记位置').openPopup();
+    if(!drawLayer) drawLayer = L.layerGroup().addTo(map);
+    drawLayer.addLayer(L.marker(e.latlng).bindPopup('已标记位置').openPopup());
+    document.dispatchEvent(new CustomEvent('map:annotation-created',{detail:{type:'point'}}));
     enterDraw(null); toast('已标记位置，可交给 AI 处理'); return;
+  }
+
+  if(drawMode === 'text'){
+    if(!drawLayer) drawLayer = L.layerGroup().addTo(map);
+    const label=L.marker(e.latlng,{icon:L.divIcon({className:'map-text-annotation',html:'文字标注',iconSize:[72,24],iconAnchor:[6,12]})});
+    drawLayer.addLayer(label);
+    document.dispatchEvent(new CustomEvent('map:annotation-created',{detail:{type:'text'}}));
+    enterDraw(null);toast('已添加文字标注');return;
   }
 
   // 测距：点两点，逐段累加，弹出该段距离
@@ -54,8 +71,10 @@ function onMapClick(e){
     if(drawPts.length < 2) return;
     const a = drawPts[drawPts.length - 2], b = drawPts[drawPts.length - 1];
     const d = map.distance(a, b);
-    L.polyline([a, b], { color:'#10B981', weight:3, dashArray:'6,6' }).addTo(map);
-    L.marker(b).addTo(map).bindPopup('＋ ' + d.toFixed(0) + ' m').openPopup();
+    if(!measureLayer) measureLayer=L.layerGroup().addTo(map);
+    measureLayer.addLayer(L.polyline([a, b], { color:'#10B981', weight:3, dashArray:'6,6' }));
+    const distanceMarker=L.marker(b).bindPopup('＋ ' + d.toFixed(0) + ' m');
+    measureLayer.addLayer(distanceMarker);distanceMarker.openPopup();
     drawPts = []; return;
   }
 
@@ -72,7 +91,9 @@ function onMapClick(e){
   if(drawPreview) map.removeLayer(drawPreview);
   const opt = drawMode === 'line'
     ? { color:'#3B82F6', weight:3 }
-    : { color:'#10B981', weight:3, fillOpacity:.12 };
+    : drawMode === 'measure-area'
+      ? { color:'#0EA5E9', weight:2, dashArray:'6,5', fillOpacity:.08 }
+      : { color:'#10B981', weight:3, fillOpacity:.12 };
   drawPreview = drawMode === 'line'
     ? L.polyline(drawPts, opt).addTo(map)
     : L.polygon(drawPts, opt).addTo(map);
@@ -80,32 +101,36 @@ function onMapClick(e){
 
 function endDraw(){
   // point / measure / select 不靠双击结束
-  if(!drawMode || drawMode === 'point' || drawMode === 'measure' || drawMode === 'select') return;
+  if(!drawMode || drawMode === 'point' || drawMode === 'text' || drawMode === 'measure' || drawMode === 'select') return;
   if(drawPts.length >= 2){
     // 去掉双击产生的重复尾点
     if(drawPts[drawPts.length - 1].equals(drawPts[drawPts.length - 2])) drawPts.pop();
-    if(!drawLayer) drawLayer = L.layerGroup().addTo(map);
+    const targetLayer=drawMode==='measure-area'
+      ? (measureLayer||(measureLayer=L.layerGroup().addTo(map)))
+      : (drawLayer||(drawLayer=L.layerGroup().addTo(map)));
     const opt = drawMode === 'line'
       ? { color:'#3B82F6', weight:3 }
-      : { color:'#10B981', weight:3, fillOpacity:.12 };
-    if(drawMode === 'line') drawLayer.addLayer(L.polyline(drawPts, opt));
-    else drawLayer.addLayer(L.polygon(drawPts, opt));
-    toast(drawMode === 'line' ? '已绘制线要素' : '已绘制面要素，可交给 AI 处理');
+      : drawMode === 'measure-area'
+        ? { color:'#0EA5E9', weight:2, dashArray:'6,5', fillOpacity:.08 }
+        : { color:'#10B981', weight:3, fillOpacity:.12 };
+    if(drawMode === 'line') targetLayer.addLayer(L.polyline(drawPts, opt));
+    else targetLayer.addLayer(L.polygon(drawPts, opt));
+    if(drawMode === 'measure-area')toast('已完成面积测量（交互原型）');
+    else{
+      document.dispatchEvent(new CustomEvent('map:annotation-created',{detail:{type:drawMode}}));
+      toast(drawMode === 'line' ? '已绘制线标注' : '已绘制面标注，可交给 AI 处理');
+    }
   }
   enterDraw(null);
 }
 
-// ============ 地图工具条 ============
-document.querySelectorAll('.mt-btn').forEach(b=>{
-  b.addEventListener('click', ()=>{
-    const t = b.dataset.tool;
-    if(!map){ toast('演示模式：地图未加载'); return; }
-    if(t === 'zoomIn'){ map.zoomIn(); return; }
-    if(t === 'zoomOut'){ map.zoomOut(); return; }
-    // 矢量数据入口由 map-layer.js 独立管理。
-    if(t === 'layer') return;
-    // 再次点击当前激活的绘制按钮 → 退出绘制
-    if(drawMode === t){ enterDraw(null); return; }
-    enterDraw(t);
-  });
-});
+window.MapPreviewDrawing={
+  enter:enterDraw,
+  stop:()=>enterDraw(null),
+  getMode:()=>drawMode,
+  clear:()=>{if(drawLayer)drawLayer.clearLayers();clearDraw();enterDraw(null);},
+  snapshot:()=>drawLayer?drawLayer.getLayers().slice():[],
+  restore:layers=>{if(!Array.isArray(layers)||!layers.length)return;if(!drawLayer)drawLayer=L.layerGroup().addTo(map);layers.forEach(layer=>drawLayer.addLayer(layer));},
+  removeLast:()=>{if(!drawLayer)return false;const layers=drawLayer.getLayers();if(!layers.length)return false;drawLayer.removeLayer(layers[layers.length-1]);return true;},
+  annotationCount:()=>drawLayer?drawLayer.getLayers().length:0
+};
