@@ -7,11 +7,88 @@
 .map-result-feature.geometry-line{fill:none!important;stroke-linecap:round;stroke-linejoin:round}.map-result-feature.geometry-point{fill-opacity:.9}
 .map-graphic{fill:rgba(239,68,68,.08);stroke:#EF4444;stroke-width:3;vector-effect:non-scaling-stroke;pointer-events:all;cursor:pointer}.map-graphic:hover{filter:drop-shadow(0 2px 3px rgba(239,68,68,.4))}.map-graphic.selected{stroke:#7C3AED;stroke-width:5;filter:drop-shadow(0 2px 4px rgba(124,58,237,.45))}.graphic-marker{fill:#EF4444}.graphic-arrow{fill:none}.graphic-text{fill:#B91C1C;stroke:none;font:700 24px "Microsoft YaHei",sans-serif}.map-box-selection{position:absolute;z-index:4;border:1.5px solid #0EA5E9;background:rgba(14,165,233,.12);pointer-events:none}.map-box-selection[hidden]{display:none}
 .map-selection-actions{position:absolute;left:50%;bottom:26px;z-index:22;transform:translateX(-50%);display:flex;align-items:center;gap:7px;padding:7px 8px 7px 13px;border:1px solid rgba(148,163,184,.24);border-radius:12px;background:rgba(255,255,255,.97);box-shadow:0 10px 28px rgba(15,23,42,.16);font-size:12px;color:#475569;cursor:grab;touch-action:none;user-select:none}.map-selection-actions[hidden]{display:none}.map-selection-actions.dragging{cursor:grabbing;box-shadow:0 14px 34px rgba(15,23,42,.24)}.map-selection-actions b{color:#059669}.map-selection-actions button{height:30px;padding:0 10px;border:1px solid #E2E8F0;border-radius:7px;background:#fff;color:#475569;font:12px inherit;cursor:pointer}.map-selection-actions button[hidden]{display:none}.map-selection-actions button:hover{border-color:var(--main);color:var(--main)}.map-selection-actions button[data-selection-action="ask-ai"]{background:var(--main);border-color:var(--main);color:#fff}
+.map-object-context-menu{position:fixed;z-index:1500;min-width:190px;padding:6px;background:#fff;border:1px solid rgba(148,163,184,.28);border-radius:10px;box-shadow:0 14px 36px rgba(15,23,42,.2)}.map-object-context-menu[hidden]{display:none}.map-object-context-menu button{display:flex;width:100%;height:34px;align-items:center;padding:0 10px;border:0;border-radius:7px;background:transparent;color:#334155;font:12.5px inherit;text-align:left;cursor:pointer}.map-object-context-menu button:hover{background:#ECFDF5;color:#047857}.map-object-context-menu button[aria-disabled="true"]{color:#94A3B8;cursor:not-allowed}.map-object-context-menu button[aria-disabled="true"]:hover{background:#F8FAFC;color:#94A3B8}.map-object-context-menu small{display:block;max-width:210px;padding:4px 10px 6px;color:#F97316;font-size:10.5px;line-height:1.45}
+.create-legend-layer-modal{width:460px}.create-legend-layer-source{display:flex;gap:12px;margin-bottom:18px;padding:12px 14px;border:1px solid #E2E8F0;border-radius:10px;background:#F8FAFC;color:#64748B;font-size:12px}.create-legend-layer-source span{flex:1;min-width:0}.create-legend-layer-source b{display:inline;color:#0F172A}.create-legend-layer-field input{background:#fff}.create-legend-layer-field input.invalid{border-color:#EF4444;box-shadow:0 0 0 3px rgba(239,68,68,.1)}.create-legend-layer-error{margin-top:6px;color:#DC2626;font-size:11.5px}.legend-clone-layer{pointer-events:none}.legend-clone-layer .map-result-feature{pointer-events:none}
 .map-result-panel{position:absolute;right:16px;top:68px;z-index:25;width:230px;padding:13px;background:rgba(255,255,255,.97);border:1px solid rgba(148,163,184,.24);border-radius:12px;box-shadow:0 14px 35px rgba(15,23,42,.14);color:#475569}.map-result-panel[hidden]{display:none}.mrp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;color:#0F172A;font-size:13px}.mrp-head button{border:0;background:transparent;color:#94A3B8;cursor:pointer}.map-result-panel label{display:flex;flex-direction:column;gap:6px;margin:10px 0;font-size:11.5px}.map-result-panel input[type="range"]{width:100%;accent-color:var(--main)}
 .result-color-options{display:flex;gap:9px;margin-top:12px}.result-color-options button{width:24px;height:24px;border:2px solid #fff;border-radius:7px;box-shadow:0 0 0 1px #CBD5E1;cursor:pointer}.result-color-options button:nth-child(1){background:#10B981}.result-color-options button:nth-child(2){background:#3B82F6}.result-color-options button:nth-child(3){background:#F59E0B}.result-color-options button.active{box-shadow:0 0 0 2px #0F172A}.map-properties-content{display:grid;grid-template-columns:58px 1fr;gap:8px 10px;font-size:12px}.map-properties-content dt{color:#94A3B8}.map-properties-content dd{margin:0;color:#334155;font-weight:600}
 .map-edit-style-section{margin-top:13px;padding-top:4px;border-top:1px solid #F1F5F9}.map-edit-style-section[hidden]{display:none}.map-edit-style-section input[type="text"],.map-edit-style-section input[type="color"],.map-property-field{width:100%;box-sizing:border-box;padding:7px 8px;border:1px solid #E2E8F0;border-radius:7px;background:#fff;color:#334155;font:11.5px inherit}.map-edit-style-section input[type="color"]{height:34px;padding:3px}.map-edit-panel-actions{display:flex;flex-direction:column;gap:6px;margin-top:10px}.map-edit-panel-actions button,.map-property-save{width:100%;padding:7px;border:1px solid #D1FAE5;border-radius:7px;background:#ECFDF5;color:#047857;font:11px inherit;cursor:pointer}.map-property-save{margin-top:12px;background:var(--main);color:#fff}.map-property-save[hidden]{display:none}
 .gis-status{display:flex;flex-direction:column;gap:7px;min-width:210px}.gis-status-title{font-weight:600;color:#334155}.gis-status-step{display:flex;align-items:center;gap:7px;color:#94A3B8;font-size:12px}.gis-status-step.done{color:#059669}.gis-status-step.running{color:#0EA5E9}.gis-status-step .step-mark{width:16px;text-align:center}.gis-result-layer-note{margin-top:9px;padding:9px 10px;border:1px solid #BAE6FD;border-radius:9px;background:#F0F9FF;color:#475569;font-size:11.5px;line-height:1.65}.gis-result-layer-note strong{color:#0369A1}.gis-result-card{margin-top:9px;border:1px solid #D1FAE5;border-radius:11px;background:linear-gradient(145deg,#F0FDF4,#fff);overflow:hidden}.gis-result-card-main{padding:12px}.gis-result-card-title{font-size:13px;font-weight:700;color:#14532D}.gis-result-card-meta{display:flex;gap:7px;margin-top:8px;flex-wrap:wrap}.gis-result-card-meta span{padding:3px 7px;border-radius:6px;background:#fff;border:1px solid #D1FAE5;color:#64748B;font-size:10.5px}.gis-result-card button{width:100%;padding:8px;border:0;border-top:1px solid #D1FAE5;background:rgba(236,253,245,.7);color:#059669;font:12px inherit;font-weight:600;cursor:pointer}.gis-result-card button:hover{background:#D1FAE5}
 @media(max-width:1180px){.map-stage-tools{left:76px;right:8px;max-width:none}.map-result-summary small{display:none}.map-stage-tools button{padding:0 7px}.map-result-summary b{max-width:130px}.map-manual-toolbar .map-result-summary{display:none}}
-@media(max-width:900px){.map-result-summary{display:none}.map-stage-tools{left:auto;max-width:calc(100% - 78px);overflow:visible}.map-stage-tools>button[data-result-tool="save"]{display:none}.map-manual-toolbar{left:76px;max-width:none}.map-manual-toolbar>button[data-manual-tool="properties"],.map-manual-toolbar>button[data-manual-tool="style"]{display:none}}
+@media(max-width:900px){.map-result-summary{display:none}.map-stage-tools{left:auto;max-width:calc(100% - 78px);overflow:visible}.map-stage-tools>button[data-result-tool="save"]{display:none}.map-manual-toolbar{left:76px;max-width:none}}
 .workspace-map-view[data-map-stage="manual-edit"] .map-manual-notice{top:152px}
 .workspace-map-view[data-map-stage="manual-edit"] .map-result-panel{top:152px}
+
+/* ===== 查询要素属性：ArcGIS 风格属性表（底部停靠） ===== */
+.map-attribute-table{position:absolute;left:0;right:0;bottom:0;z-index:30;display:flex;flex-direction:column;height:260px;background:rgba(255,255,255,.98);border-top:1px solid #CBD5E1;box-shadow:0 -6px 24px rgba(15,23,42,.14);font-size:12px;color:#334155}
+.map-attribute-table[hidden]{display:none}
+.mat-head{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;height:38px;padding:0 12px;background:#F8FAFC;border-bottom:1px solid #E2E8F0}
+.mat-head b{color:#0F172A;font-size:13px}
+.mat-head button{border:0;background:transparent;color:#94A3B8;font-size:14px;cursor:pointer}
+.mat-body{flex:1 1 auto;overflow:auto;position:relative}
+.mat-scroll{min-width:100%}
+.mat-table{width:auto;min-width:100%;border-collapse:separate;border-spacing:0}
+.mat-table th,.mat-table td{padding:5px 10px;border-right:1px solid #E2E8F0;border-bottom:1px solid #E2E8F0;white-space:nowrap;text-align:left;vertical-align:middle}
+.mat-table th{position:sticky;top:0;z-index:2;background:#F1F5F9;color:#475569;font-weight:600;font-size:11.5px;border-bottom:1px solid #CBD5E1}
+.mat-table th:first-child,.mat-table td:first-child{position:sticky;left:0;z-index:3;min-width:36px;text-align:center;background:#F1F5F9;border-right:1px solid #CBD5E1}
+.mat-table tbody td:first-child{background:#fff;z-index:1}
+.mat-table tbody tr:nth-child(even) td:first-child{background:#F8FAFC}
+.mat-table tbody tr.selected td:first-child{background:#DBEAFE}
+.mat-table td{color:#334155;background:#fff}
+.mat-table tbody tr:nth-child(even) td{background:#F8FAFC}
+.mat-table tbody tr:hover td{background:#E0F2FE}
+.mat-table tbody tr.selected td{background:#DBEAFE}
+.mat-table tbody tr.selected:hover td{background:#BFDBFE}
+.mat-foot{flex:0 0 auto;height:30px;padding:0 12px;display:flex;align-items:center;background:#F8FAFC;border-top:1px solid #E2E8F0;color:#64748B;font-size:11px}
+.mat-empty{padding:30px 12px;color:#94A3B8;text-align:center;background:#fff}
+.mat-empty b{color:#475569}
+@media(max-width:900px){.map-attribute-table{height:200px}}
+
+/* ===== 属性表：可编辑 / 只读字段标识 ===== */
+/* 可编辑列头：白底无填充 */
+.mat-editable-col{background:#fff!important;position:relative}
+.mat-editable-icon{font-size:10px;color:#10B981;margin-left:2px;vertical-align:middle;opacity:.7}
+/* 可编辑单元格：无填充，hover 加绿色边框 */
+.mat-editable{color:#0F172A;cursor:pointer;position:relative}
+.mat-editable:hover{box-shadow:inset 0 0 0 2px #10B981}
+.mat-edit-badge{font-size:9px;color:#10B981;margin-left:3px;vertical-align:middle;opacity:0;transition:opacity .15s}
+.mat-editable:hover .mat-edit-badge{opacity:.85}
+
+/* 只读列头：浅灰填充 */
+.mat-ro-col{color:#94A3B8!important;background:#E2E8F0!important;position:relative}
+.mat-ro-icon{font-size:10px;color:#94A3B8;margin-left:2px;vertical-align:middle}
+/* 只读单元格：浅灰填充 */
+.mat-readonly{color:#94A3B8;cursor:default;position:relative;background:#F1F5F9!important}
+.mat-readonly:hover{background:#E2E8F0!important}
+.mat-ro-badge{font-size:9px;color:#94A3B8;margin-left:3px;vertical-align:middle;opacity:.7}
+
+/* ===== 属性表：表头操作区（添加字段按钮） ===== */
+.mat-head-actions{display:flex;align-items:center;gap:6px}
+#matAddField{height:24px;padding:0 10px;border:1px solid #D1FAE5;border-radius:6px;background:#ECFDF5;color:#059669;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap}
+#matAddField:hover{background:#D1FAE5}
+
+/* 添加字段弹窗 */
+.mat-add-field-modal{width:380px}
+
+/* ===== 属性表：双击行内编辑 ===== */
+.mat-editing{padding:0!important;background:#fff!important;border:2px solid #3B82F6!important;box-shadow:0 0 0 2px rgba(59,130,246,.18),inset 0 1px 3px rgba(0,0,0,.06);border-radius:3px;z-index:5}
+.mat-edit-input{width:100%;height:100%;min-height:22px;padding:3px 5px;border:0;border-radius:0;background:transparent;color:#0F172A;font:inherit;font-size:11.5px;outline:none;box-sizing:border-box;min-width:60px}
+
+/* ===== 属性表：滚动定位闪烁效果（地图→表格） ===== */
+.mat-scroll-target{outline:2px solid #3B82F6!important;outline-offset:-2px;transition:outline-color .3s}
+@keyframes matRowFlash{
+  0%{background-color:#BFDBFE}
+  30%{background-color:#DBEAFE}
+  70%{background-color:#EFF6FF}
+  100%{background-color:transparent}
+}
+.mat-scroll-flash td{animation:matRowFlash 1.2s ease forwards}
+.mat-scroll-flash.selected td{animation:matRowFlash 1.2s ease forwards;background-color:#DBEAFE!important}
+
+/* ===== 地图要素高亮弹跳动画（表格行→地图） ===== */
+@keyframes matFeatBounce{
+  0%{filter:drop-shadow(0 0 0 rgba(249,115,22,0))}
+  25%{filter:drop-shadow(0 0 14px rgba(249,115,22,.7))}
+  50%{filter:drop-shadow(0 0 6px rgba(249,115,22,.4))}
+  100%{filter:drop-shadow(0 0 0 rgba(249,115,22,0))}
+}
+.mat-feat-highlight{animation:matFeatBounce .65s ease}

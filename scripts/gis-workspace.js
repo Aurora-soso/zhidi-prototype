@@ -3,20 +3,58 @@
 (function(){
   const button=$('#ciWorkspace'), mask=$('#workspaceFolderMask');
   const vectorButton=document.querySelector('.map-toolbar [data-tool="load-local"]');
-  const state={workspacePath:'',vectorLayers:[],selectedSpace:null};
+  const state={workspacePath:'',vectorLayers:[],vectorTree:[],selectedSpace:null};
 
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 
   function scan(path){
-    // 每个图层自带「图例样式」字段（legend），图例完全由加载的图层驱动，不再写死。
+    // 返回「目录树」结构（供矢量选择弹窗按层级展示）：
+    //   kind: 'file'  → 空间文件叶子节点（shapefile/geojson/gpkg/gdb 等）
+    //   kind: 'folder'→ 子目录节点，可逐级展开/折叠，children 嵌套下层节点
+    // 非空间文件（pdf/md/svg 等）在此阶段已被筛除，不进入树。
+    // 每个文件节点自带「图例样式」字段（legend），图例完全由加载的图层驱动，不再写死。
     // legend.type: polygon(面) / line(线) / point(点)；颜色与地图渲染样式(layerStyles)保持一致。
+    function mk(id,name,fileName,type,geometryType,legend,category){
+      return {kind:'file',id:id,name:name,fileName:fileName,type:type,geometryType:geometryType,category:category||'vector',path:path+fileName,loaded:false,visible:true,opacity:1,legend:legend};
+    }
     return [
-      {id:'building',name:'建筑',fileName:'建筑.shp',type:'Shapefile',geometryType:'面',path:path+'建筑.shp',loaded:false,visible:true,opacity:1,legend:{type:'polygon',fill:'#A78BFA',stroke:'#7C3AED'}},
-      {id:'road',name:'道路',fileName:'道路.shp',type:'Shapefile',geometryType:'线',path:path+'道路.shp',loaded:false,visible:true,opacity:1,legend:{type:'line',stroke:'#F59E0B'}},
-      {id:'river',name:'河流',fileName:'河流.geojson',type:'GeoJSON',geometryType:'线',path:path+'河流.geojson',loaded:false,visible:true,opacity:1,legend:{type:'line',stroke:'#0EA5E9'}},
-      {id:'landuse',name:'土地利用',fileName:'土地利用.gpkg',type:'GeoPackage',geometryType:'面',path:path+'土地利用.gpkg',loaded:false,visible:true,opacity:1,legend:{type:'polygon',fill:'#34D399',stroke:'#10B981'}},
-      {id:'poi',name:'监测点',fileName:'监测点.geojson',type:'GeoJSON',geometryType:'点',path:path+'监测点.geojson',loaded:false,visible:true,opacity:1,legend:{type:'point',fill:'#F87171',stroke:'#DC2626'}}
+      mk('building','建筑','建筑.shp','Shapefile','面',{type:'polygon',fill:'#A78BFA',stroke:'#7C3AED'}),
+      mk('road','道路','道路.shp','Shapefile','线',{type:'line',stroke:'#F59E0B'}),
+      mk('river','河流','河流.geojson','GeoJSON','线',{type:'line',stroke:'#0EA5E9'}),
+      mk('landuse','土地利用','土地利用.gpkg','GeoPackage','面',{type:'polygon',fill:'#34D399',stroke:'#10B981'}),
+      mk('poi','监测点','监测点.geojson','GeoJSON','点',{type:'point',fill:'#F87171',stroke:'#DC2626'}),
+      {
+        kind:'folder',name:'基础地理数据',expanded:false,
+        children:[
+          mk('terrain','地形','地形.shp','Shapefile','面',{type:'polygon',fill:'#FBBF24',stroke:'#D97706'}),
+          mk('water','水系','水系.geojson','GeoJSON','线',{type:'line',stroke:'#06B6D4'})
+        ]
+      },
+      {
+        kind:'folder',name:'专项规划',expanded:false,
+        children:[
+          mk('redline','用地红线','用地红线.shp','Shapefile','面',{type:'polygon',fill:'#F472B6',stroke:'#DB2777'}),
+          mk('control','控规单元','控规单元.gdb','FileGDB','面',{type:'polygon',fill:'#60A5FA',stroke:'#2563EB'})
+        ]
+      },
+      {
+        kind:'folder',name:'影像地形',expanded:false,
+        children:[
+          mk('ortho','正射影像','正射影像.tif','GeoTIFF','影像',{type:'polygon',fill:'#94A3B8',stroke:'#64748B'},'raster'),
+          mk('dem','DEM高程','DEM高程.tif','GeoTIFF','地形',{type:'polygon',fill:'#CBD5E1',stroke:'#64748B'},'raster')
+        ]
+      }
     ];
+  }
+
+  // 将目录树扁平化为「文件节点」数组，供图层加载/图例/图层面板等沿用旧逻辑
+  function flattenTree(nodes,out){
+    out=out||[];
+    (nodes||[]).forEach(n=>{
+      if(n.kind==='file')out.push(n);
+      else if(n.kind==='folder'&&n.children)flattenTree(n.children,out);
+    });
+    return out;
   }
 
   // 渲染项目空间列表（数据来自 conversation-manager 的 workspaces）
@@ -76,7 +114,8 @@
       if(!ok) return;
     }
     state.workspacePath=$('#workspacePathInput').value||'E:/GIS/project/';
-    state.vectorLayers=scan(state.workspacePath);
+    state.vectorTree=scan(state.workspacePath);
+    state.vectorLayers=flattenTree(state.vectorTree);
     vectorButton.classList.remove('disabled');
     vectorButton.setAttribute('aria-disabled','false');
     vectorButton.disabled=false;
@@ -95,5 +134,5 @@
   $('#workspaceFolderCancel').addEventListener('click',close);
   $('#workspaceFolderConfirm').addEventListener('click',confirm);
   mask.addEventListener('click',event=>{if(event.target===mask)close();});
-  window.GISWorkspace={getPath:()=>state.workspacePath,getVectorLayers:()=>state.vectorLayers,isReady:()=>Boolean(state.workspacePath)};
+  window.GISWorkspace={getPath:()=>state.workspacePath,getVectorLayers:()=>state.vectorLayers,getVectorTree:()=>state.vectorTree,isReady:()=>Boolean(state.workspacePath)};
 })();

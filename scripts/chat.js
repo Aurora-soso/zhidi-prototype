@@ -1,11 +1,41 @@
 // ============ 对话 ============
 const chatBody=$('#chatBody'); const sendBtn=$('#sendBtn'); const stopBtn=$('#stopBtn');
 let typingEl=null, stopped=false;
+// ============ 气泡元信息（消耗时间 / 消耗 Token） ============
+// 说明：本原型无真实后端 usage 字段，故「消耗时间」用 performance.now 真实测量「发起请求→收到响应」耗时，
+// 「Token」依据文本长度估算（中文字符≈1 token，其余≈4 字符/token）。接入真实 API 时仅需把 estimateTokens
+// 替换为响应 usage 字段（如 data.usage.total_tokens），并把 elapsedSinceRequest 替换为服务端耗时即可。
+let reqStartTime = 0;
+function estimateTokens(text){
+  if(!text) return 0;
+  const s = String(text).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  const cjk = (s.match(/[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]/g) || []).length;
+  const other = s.length - cjk;
+  return Math.max(1, Math.round(cjk + other / 4));
+}
+function beginRequest(){ reqStartTime = performance.now(); }
+function elapsedSinceRequest(){ return Math.max(0, Math.round(performance.now() - reqStartTime)); }
+function formatTime(ms){ return ms < 1000 ? (ms + 'ms') : ((ms / 1000).toFixed(2) + 's'); }
+function attachBubbleMeta(bubble, meta){
+  if(!bubble || bubble.querySelector('.bubble-meta')) return;
+  const el = document.createElement('div');
+  el.className = 'bubble-meta';
+  el.innerHTML = '<span>⏱ ' + formatTime(meta.timeMs) + '</span><span>' + meta.tokens + ' tokens</span>';
+  bubble.appendChild(el);
+}
 function addBubble(role,text){
   const d=document.createElement('div'); d.className='bubble '+role;
   d.innerHTML=`<div class="av">${role==='ai'?'AI':'我'}</div><div class="txt">${text}</div>`;
   chatBody.appendChild(d); chatBody.scrollTop=chatBody.scrollHeight;
-  if(window.ConversationManager) window.ConversationManager.recordMessage(role, text);
+  // role 为 ai 时，把当前智能体名称一并记录，便于导出时标注发送者
+  const agent = role==='ai' && typeof currentAgent!=='undefined' && currentAgent ? currentAgent.name : null;
+  if(window.ConversationManager) window.ConversationManager.recordMessage(role, text, agent);
+  // 元信息：仅 AI 回复显示「消耗时间 + Token」；用户消息只标记本轮请求开始，不显示元信息
+  if(role==='ai'){
+    attachBubbleMeta(d, { timeMs: elapsedSinceRequest(), tokens: estimateTokens(text) });
+  } else {
+    beginRequest();
+  }
   return d;
 }
 function isGISDemoRequest(q){
@@ -27,6 +57,7 @@ function addDocumentResultMessage(artifact){
   const bubble=document.createElement('div');bubble.className='bubble ai';
   bubble.innerHTML='<div class="av">AI</div><div class="txt">公文已生成，并已在内容工作区打开。<div class="document-result-card"><div class="document-result-card-main"><span class="document-result-card-icon">W</span><span class="document-result-card-info"><b></b><small>工作通知 · 约 860 字 · Word 文档</small></span></div><button type="button">打开文档</button></div></div>';
   bubble.querySelector('.document-result-card-info b').textContent=artifact.fileName;bubble.querySelector('button').addEventListener('click',()=>window.DocumentArtifactViewer?.openDocument(artifact));chatBody.appendChild(bubble);chatBody.scrollTop=chatBody.scrollHeight;
+  attachBubbleMeta(bubble, { timeMs: elapsedSinceRequest(), tokens: estimateTokens(bubble.textContent) });
 }
 function runDocumentGeneration(q){
   stopped=false;stopBtn.style.display='inline-block';sendBtn.style.display='none';const progress=appendDocumentProgress();let step=0;
@@ -58,6 +89,7 @@ function addGISResultMessage(){
   bubble.innerHTML='<div class="av">AI</div><div class="txt">已完成筛选，共找到 37 个商业用地地块。<div class="gis-result-layer-note"><strong>图层说明：</strong>筛选结果已作为独立的“商业用地筛选结果”图层自动加载到图层管理器，并已设为当前选中图层。现在可直接在该图层上进行编辑；退出编辑后仍可在图层管理面板中统一进行可见性切换、排序、透明度调整和删除。</div><div class="gis-result-card"><div class="gis-result-card-main"><div class="gis-result-card-title">商业用地筛选结果</div><div class="gis-result-card-meta"><span>37 个要素</span><span>Polygon</span><span>已加载到图层管理</span><span>当前正在编辑</span></div></div><button type="button" data-gis-result-action="locate">定位到当前编辑图层</button></div></div>';
   chatBody.appendChild(bubble);chatBody.scrollTop=chatBody.scrollHeight;
   bubble.querySelector('[data-gis-result-action="locate"]').addEventListener('click',()=>window.MapResultInteraction?.locateResults());
+  attachBubbleMeta(bubble, { timeMs: elapsedSinceRequest(), tokens: estimateTokens(bubble.textContent) });
 }
 function runGISDemo(){
   stopped=false;stopBtn.style.display='inline-block';sendBtn.style.display='none';
@@ -96,6 +128,7 @@ function addStatisticsResultMessage(){
   }else{
     bubble.querySelector('.txt').textContent='已完成成都市设施分类统计（渲染组件未加载）。';
   }
+  attachBubbleMeta(bubble, { timeMs: elapsedSinceRequest(), tokens: estimateTokens(bubble.textContent) });
 }
 function runStatistics(){
   stopped=false;stopBtn.style.display='inline-block';sendBtn.style.display='none';
@@ -152,6 +185,7 @@ function addCartographyResultMessage(mapData){
   chatBody.appendChild(bubble);chatBody.scrollTop=chatBody.scrollHeight;
   // 绑定卡片按钮事件（模板/导出环节统一由「确认」按钮引导）
   bubble.querySelector('[data-carto-action="locate"]')?.addEventListener('click',()=>window.MapResultInteraction?.locateResults?.());
+  attachBubbleMeta(bubble, { timeMs: elapsedSinceRequest(), tokens: estimateTokens(bubble.textContent) });
 }
 function runCartography(){
   stopped=false;stopBtn.style.display='inline-block';sendBtn.style.display='none';

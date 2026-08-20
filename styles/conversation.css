@@ -106,6 +106,16 @@
 .conv-item:hover .conv-item-more,.conv-item.active .conv-item-more{opacity:1;}
 .conv-item-more:hover{background:#F1F5F9;color:var(--t-title);}
 
+/* 置顶按钮（仅任务对话）：未置顶时悬停显示，置顶后常驻显示并用主色高亮 */
+.conv-item-pin{
+  flex-shrink:0;width:20px;height:20px;border:none;border-radius:6px;background:transparent;
+  color:var(--t-ph);font-size:13px;line-height:1;cursor:pointer;opacity:0;transition:.12s;padding:0;
+}
+.conv-item:hover .conv-item-pin,.conv-item.active .conv-item-pin{opacity:1;}
+.conv-item-pin:hover{background:#F1F5F9;color:var(--t-title);}
+.conv-item.pinned{background:rgba(16,185,129,.07);}
+.conv-item.pinned .conv-item-pin{opacity:1;color:var(--main);}
+
 /* 空状态 */
 .conv-empty{padding:22px 12px;text-align:center;color:var(--t-ph);font-size:12px;line-height:1.6;}
 
@@ -161,6 +171,7 @@
 .sidebar.collapsed .conv-item-title{display:none;}
 .sidebar.collapsed .conv-item-meta{display:none;}
 .sidebar.collapsed .conv-item-more{display:none;}
+.sidebar.collapsed .conv-item-pin{display:none;}
 .sidebar.collapsed .conv-empty{display:none;}
 /* 移动端：搜索框与新建按钮更紧凑 */
 @media (max-width:640px){

@@ -211,7 +211,6 @@ function openKbFilePage(kbName, catName){
   $('#kbDetail').style.display = 'none';
   $('#kbFilePage').style.display = 'flex';
   $('#kbFileSearchInput').value = '';
-  $('#kbFileStatusFilter').value = 'all';
   renderKbFileList();
 }
 window.openKbFilePage = openKbFilePage;
@@ -326,7 +325,6 @@ function bindKbFileRowEvents(){
 function bindKbFileGlobalEvents(){
   $('#kbFileHomeLink').addEventListener('click', showKbHome);
   $('#kbFileCatLink').addEventListener('click', showKbDetail);
-  $('#kbFileStatusFilter').addEventListener('change', e=>{ kbFileState.status=e.target.value; kbFileState.page=1; renderKbFileList(); });
   $('#kbFileSearchInput').addEventListener('input', e=>{ kbFileState.q=e.target.value; kbFileState.page=1; renderKbFileList(); });
   $('#kbFileSearchBtn').addEventListener('click', ()=>{ kbFileState.q=$('#kbFileSearchInput').value; kbFileState.page=1; renderKbFileList(); });
   $('#kbFileSelectAll').addEventListener('change', e=>{
@@ -369,6 +367,5 @@ $('#kbGrid').addEventListener('click', e=>{
 });
 $('#kbAdvancedSearch').addEventListener('click', ()=>toast('高级检索（演示）'));
 $('#kbHomeLink').addEventListener('click', showKbHome);
-$('#kbNewButton').addEventListener('click', ()=>toast('新建知识库（演示）'));
 bindKbFileGlobalEvents();
 

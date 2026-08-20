@@ -418,7 +418,22 @@
     font-size:17px;color:#94A3B8;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.12s;
   }
   .td-close:hover{background:#F1F5F9;color:#475569;}
+  .td-tabs{
+    display:flex;gap:24px;padding:0 24px;border-bottom:1px solid #E2E8F0;background:#fff;
+  }
+  .td-tab{
+    position:relative;padding:13px 2px 12px;border:none;background:none;color:#64748B;
+    font-size:13.5px;font-weight:600;font-family:inherit;cursor:pointer;outline:none;
+  }
+  .td-tab:hover{color:var(--sub);}
+  .td-tab:focus-visible{border-radius:5px;box-shadow:0 0 0 3px rgba(59,130,246,.16);}
+  .td-tab.active{color:var(--sub);}
+  .td-tab.active::after{
+    content:'';position:absolute;left:0;right:0;bottom:-1px;height:2px;border-radius:2px;background:var(--sub);
+  }
   .td-body{flex:1;overflow-y:auto;padding:8px 24px 16px;}
+  .td-panel{display:none;}
+  .td-panel.active{display:block;}
   .td-sec{padding:14px 0;border-bottom:1px solid #F1F5F9;}
   .td-sec:last-child{border-bottom:none;}
   .td-sec h4{
@@ -429,27 +444,13 @@
   .td-intro{font-size:13.5px;line-height:1.7;color:#475569;margin:0;}
   .td-funcs{margin:0;padding-left:18px;}
   .td-funcs li{font-size:13.5px;line-height:1.8;color:#475569;}
-  .td-tag{
-    display:inline-flex;align-items:center;padding:4px 14px;border-radius:8px;
-    font-size:13px;font-weight:600;
+  .td-scenarios{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+  .td-scenario{
+    display:flex;align-items:flex-start;gap:10px;padding:11px 12px;border:1px solid #E8EEF5;
+    border-radius:10px;background:#F8FAFC;
   }
-  .td-tag.skill{background:#ECFDF5;color:#059669;}
-  .td-tag.mcp{background:#EFF6FF;color:#2563EB;}
-  .td-tag.biz{background:#F1F5F9;color:#475569;}
-  .td-io{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-  .td-io-col{
-    background:#F8FAFC;border:1px solid #EEF2F6;border-radius:10px;padding:12px 14px;
-  }
-  .td-io-title{font-size:12.5px;font-weight:700;color:#334155;margin-bottom:8px;}
-  .td-io-row{padding:7px 0;border-top:1px dashed #E2E8F0;}
-  .td-io-row:first-child{border-top:none;}
-  .td-io-name{font-size:13px;font-weight:600;color:#0F172A;display:flex;align-items:center;gap:8px;}
-  .td-io-type{
-    font-size:11px;font-weight:600;color:#64748B;background:#EEF2F6;
-    padding:1px 7px;border-radius:6px;
-  }
-  .td-io-desc{font-size:12.5px;color:#64748B;line-height:1.5;margin-top:3px;}
-  .td-io-empty{font-size:12.5px;color:#94A3B8;}
+  .td-scenario span{font-size:11px;font-weight:700;color:var(--sub);line-height:1.7;}
+  .td-scenario p{margin:0;font-size:13px;line-height:1.55;color:#475569;}
   .td-status{display:flex;gap:10px;flex-wrap:wrap;}
   .td-pill{
     display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:20px;
@@ -457,6 +458,17 @@
   }
   .td-pill.on{background:#ECFDF5;color:#059669;}
   .td-pill.off{background:#F1F5F9;color:#94A3B8;}
+  .td-pill.warn{background:#FFF7ED;color:#C2410C;}
+  .td-tools-head{display:flex;align-items:flex-start;justify-content:space-between;padding:16px 0 14px;}
+  .td-tools-head h4{margin:0 0 5px;font-size:14px;color:#334155;}
+  .td-tools-head p{margin:0;font-size:12.5px;color:#94A3B8;}
+  .td-tools-count{padding:4px 10px;border-radius:16px;background:#EFF6FF;color:#2563EB;font-size:12px;font-weight:600;}
+  .td-tools-list{display:grid;gap:10px;}
+  .td-tool-item{display:flex;align-items:flex-start;gap:12px;padding:14px;border:1px solid #E2E8F0;border-radius:11px;background:#fff;}
+  .td-tool-icon{width:34px;height:34px;flex:0 0 34px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:#EFF6FF;color:#2563EB;font-weight:700;}
+  .td-tool-name{font:600 13px ui-monospace,SFMono-Regular,Consolas,monospace;color:#0F172A;margin:1px 0 4px;}
+  .td-tool-desc{font-size:12.5px;line-height:1.5;color:#64748B;}
+  .td-tools-empty{padding:36px;text-align:center;border:1px dashed #CBD5E1;border-radius:11px;color:#94A3B8;font-size:13px;}
   .td-foot{
     display:flex;align-items:center;justify-content:flex-end;gap:12px;
     padding:14px 24px;border-top:1px solid #F1F5F9;flex-shrink:0;background:#fff;
@@ -469,3 +481,7 @@
   .td-btn.primary{background:var(--main);border-color:var(--main);color:#fff;}
   .td-btn.primary:hover{filter:brightness(.97);}
   .tool-card-new{cursor:pointer;}
+  @media (max-width:640px){
+    .td-page{padding:14px;}
+    .td-scenarios{grid-template-columns:1fr;}
+  }

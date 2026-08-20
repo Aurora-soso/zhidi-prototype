@@ -32,7 +32,11 @@
   function toggleDrawer(name){
     const shouldClose=activeDrawer===name;
     closeDrawers();
-    if(shouldClose)return;
+    if(shouldClose){
+      // 关闭测量抽屉时，若测量工具仍激活，一并退出并清除测量图形
+      if(name==='measure'&&isMeasureActive()){window.MapPreviewDrawing?.clearMeasure?.();setActive('');}
+      return;
+    }
     const drawer=document.querySelector(`[data-map-drawer="${name}"]`);
     const toggle=document.querySelector(`[data-map-drawer-toggle="${name}"]`);
     if(!drawer||!toggle)return;
@@ -48,9 +52,26 @@
   function pulse(action){
     action.classList.add('active');window.setTimeout(()=>action.classList.remove('active'),240);
   }
+  function isMeasureActive(){return activeTool==='measure-distance'||activeTool==='measure-area';}
+  // 关闭测量抽屉并复位主按钮（aria-expanded / active 同步）
+  function closeMeasureDrawer(){
+    const drawer=document.querySelector('[data-map-drawer="measure"]');
+    const toggle=document.querySelector('[data-map-drawer-toggle="measure"]');
+    if(drawer)drawer.hidden=true;
+    if(toggle){toggle.classList.remove('active');toggle.setAttribute('aria-expanded','false');}
+    if(activeDrawer==='measure')activeDrawer='';
+  }
   function startDrawing(mode,tool,message){
     if(!window.MapPreviewDrawing)return;
-    if(activeTool===tool){window.MapPreviewDrawing.stop();setActive('');toast('已退出当前工具');return;}
+    const isMeasure=tool==='measure-distance'||tool==='measure-area';
+    if(activeTool===tool){
+      // 再点当前工具 → 取消退出；测量工具额外清除图形与数值并复位按钮
+      if(isMeasure){window.MapPreviewDrawing.clearMeasure();closeMeasureDrawer();}
+      else window.MapPreviewDrawing.stop();
+      setActive('');toast('已退出当前工具');return;
+    }
+    // 从测量工具切换到其他工具 → 完整清除测量图形与数值
+    if(isMeasureActive()){window.MapPreviewDrawing.clearMeasure();closeMeasureDrawer();}
     window.MapPreviewDrawing.enter(mode);setActive(tool);toast(message);
   }
   function updateDataState(){
@@ -94,7 +115,13 @@
       if(typeof map!=='undefined'&&map)map.setView([23.132,113.268],12);pulse(action);toast('已定位到全部数据范围');return;
     }
     if(tool==='query-feature'){
-      if(activeTool===tool){setActive('');toast('已退出属性查询');}else{window.MapPreviewDrawing?.stop();setActive(tool);toast('属性查询已开启：请点选地图要素');}return;
+      const q=window.MapFeatureQuery;
+      if(activeTool===tool){setActive('');q?.exit();toast('已退出属性查询');}
+      else{
+        if(isMeasureActive()){window.MapPreviewDrawing?.clearMeasure?.();closeMeasureDrawer();}
+        window.MapPreviewDrawing?.stop();setActive(tool);q?.enter();toast('要素属性查询已开启：在左侧图层管理器选中图层后，其全部要素将显示在此面板');
+      }
+      return;
     }
     if(tool==='measure-distance'){startDrawing('measure',tool,'距离测量已开启：请在地图中依次点击两个点');return;}
     if(tool==='measure-area'){startDrawing('measure-area',tool,'面积测量已开启：绘制范围后双击结束');return;}
@@ -174,7 +201,12 @@
   document.addEventListener('keydown',event=>{
     if(event.key!=='Escape')return;
     if(!clearConfirm.hidden){hideClearConfirm();return;}
-    if(activeTool){window.MapPreviewDrawing?.stop();setActive('');return;}
+    if(activeTool){
+      if(isMeasureActive()){window.MapPreviewDrawing?.clearMeasure?.();closeMeasureDrawer();}
+      else window.MapPreviewDrawing?.stop();
+      if(activeTool==='query-feature')window.MapFeatureQuery?.exit();
+      setActive('');return;
+    }
     closeDrawers();
   });
   toolbar?.addEventListener('keydown',event=>{

@@ -3,6 +3,10 @@
 (function(){
   'use strict';
 
+  function escapeHtml(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+  }
+
   // ── 状态 ─────────────────────────────────────────────
   const state = {
     stage: 'idle',              // idle | analyzing | layer-ready | editing | template | fine-tune | export
@@ -708,7 +712,8 @@
   // ── 图例数据模型与渲染 ────────────────────────────────
   // legendItems: [{ id, name, color, borderColor, borderWidth, featureIds[] }]
   function initLegendItems(mapData) {
-    if (!mapData) return [];
+    const layerLegends = (state.legendItems || []).filter(item => item.layerId);
+    if (!mapData) { state.legendItems = layerLegends; return state.legendItems; }
     state.legendItems = (mapData.categories || []).map(c => {
       const ids = (mapData.features || []).filter(f => f.categoryCode === c.code).map(f => f.id);
       return {
@@ -719,7 +724,7 @@
         borderWidth: 1,
         featureIds: ids,
       };
-    });
+    }).concat(layerLegends);
     return state.legendItems;
   }
   function getLegendItems() { return state.legendItems || []; }
@@ -804,8 +809,8 @@
       return `<div class="carto-legend-item-row ${expanded ? 'expanded' : ''}" data-legend-id="${item.id}">
         <div class="carto-legend-item-main">
           <span class="carto-legend-swatch" style="background:${item.color};border-color:${item.borderColor}"></span>
-          <span class="carto-legend-name">${item.name}</span>
-          <span class="carto-legend-count">${item.featureIds.length} 块</span>
+          <span class="carto-legend-name">${escapeHtml(item.name)}</span>
+          <span class="carto-legend-count">${item.featureIds.length} 个对象</span>
           <button type="button" class="carto-legend-edit-btn">${expanded ? '收起' : '编辑'}</button>
         </div>
         ${expanded ? `<div class="carto-legend-edit">
@@ -872,9 +877,11 @@
 
     // 应用到要素（fill/stroke/strokeWidth 与渲染属性一致）
     const style = { fill: item.color, stroke: item.borderColor, strokeWidth: item.borderWidth };
-    const count = item.featureIds.length
-      ? (window.MapResultInteraction?.applyStyleToFeatures?.(item.featureIds, style) || 0)
-      : 0;
+    const count = item.layerId
+      ? (window.MapLayers?.updateLegendLayerStyle?.(item.layerId, {fillColor:item.color,color:item.borderColor,weight:item.borderWidth}) || 0)
+      : item.featureIds.length
+        ? (window.MapResultInteraction?.applyStyleToFeatures?.(item.featureIds, style) || 0)
+        : 0;
     renderLegendSVG(getLegendItems());
     renderLegendList();
     emitLegendChanged();   // 通知图例管理器实时刷新
@@ -911,6 +918,33 @@
     return true;
   }
 
+  /** 将运行时新图层的图例接入现有图例管理器。 */
+  function registerLayerLegend(opts) {
+    if (!opts?.id || !opts?.layerId) return null;
+    if (!state.legendItems) state.legendItems = [];
+    state.legendItems = state.legendItems.filter(item => item.id !== opts.id && item.layerId !== opts.layerId);
+    const item = {
+      id: opts.id,
+      layerId: opts.layerId,
+      name: opts.name || opts.id,
+      color: opts.color || '#3B82F6',
+      borderColor: opts.borderColor || opts.color || '#3B82F6',
+      borderWidth: opts.borderWidth || 2,
+      featureIds: [...(opts.featureIds || [])]
+    };
+    state.legendItems.push(item);
+    renderLegendList();emitLegendChanged();
+    return item;
+  }
+
+  function unregisterLayerLegend(layerId) {
+    if (!state.legendItems) return false;
+    const before = state.legendItems.length;
+    state.legendItems = state.legendItems.filter(item => item.layerId !== layerId);
+    if (state.legendItems.length !== before) { renderLegendList(); emitLegendChanged(); }
+    return state.legendItems.length !== before;
+  }
+
   /**
    * 图例管理面板「保存并应用」：提交所有暂存（pending）的图例样式修改到对应图块，
    * 并保存应用到图例框；若存在选中元素，同步应用其当前样式。
@@ -928,7 +962,8 @@
       if (item._pendingBorderWidth !== undefined) item.borderWidth = item._pendingBorderWidth;
       delete item._pendingColor; delete item._pendingBorderColor; delete item._pendingBorderWidth;
       const style = { fill: item.color, stroke: item.borderColor, strokeWidth: item.borderWidth };
-      if (item.featureIds.length) window.MapResultInteraction?.applyStyleToFeatures?.(item.featureIds, style);
+      if (item.layerId) window.MapLayers?.updateLegendLayerStyle?.(item.layerId, {fillColor:item.color,color:item.borderColor,weight:item.borderWidth});
+      else if (item.featureIds.length) window.MapResultInteraction?.applyStyleToFeatures?.(item.featureIds, style);
       applied++;
     });
     // 选中元素同步：若选中元素属于某图例条目，将条目样式应用到选中元素
@@ -1502,6 +1537,8 @@
     openLegendEditor,
     applyLegendStyle,
     createLegendFromStyle,
+    registerLayerLegend,
+    unregisterLayerLegend,
     saveApplyLegendEdits,
 
     // 模板添加确认（chat.js 注册回调以继续流程）

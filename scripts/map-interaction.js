@@ -4,7 +4,7 @@
   const graphicsLayer=$('#mapGraphicsLayer'),graphicsSvg=$('#mapGraphicsSvg');
   const resultToolbar=$('#mapResultToolbar'),manualToolbar=$('#mapManualToolbar'),cartoToolbar=$('#mapCartoToolbar');
   const selectionBar=$('#mapSelectionActions'),countEl=$('#mapSelectedCount'),summaryEl=$('#mapSelectionSummary');
-  const stylePanel=$('#mapStylePanel'),propertiesPanel=$('#mapPropertiesPanel'),box=$('#mapBoxSelection');
+  const box=$('#mapBoxSelection');
   const state={
     stage:'workspace',features:[],graphics:[],selectedFeatures:new Set(),selectedGraphics:new Set(),
     tool:'select',dragStart:null,graphicStart:null,manualSnapshot:null,history:[],historyIndex:-1,
@@ -83,7 +83,6 @@
     if(state.stage!=='manual-edit')return;
     const hasSelection=state.selectedFeatures.size>0,geometry=state.editLayer?.geometryType||'面';
     manualToolbar.querySelectorAll('[data-requires-selection]').forEach(button=>button.disabled=!hasSelection);
-    const propertyButton=manualToolbar.querySelector('[data-manual-tool="properties"]');if(propertyButton)propertyButton.disabled=!hasSelection;
     const pasteButton=$('#mapPasteFeatureBtn');if(pasteButton)pasteButton.disabled=!state.clipboard.length;
     // 按几何类型禁用：旋转/缩放/分割/裁剪/节点 仅线、面可用；点要素仅保留基础操作
     manualToolbar.querySelectorAll('[data-geometry-types]').forEach(button=>{
@@ -94,46 +93,31 @@
   }
   function updateSelectionUI(){
     const graphicsCount=state.selectedGraphics.size,featuresCount=state.selectedFeatures.size;
+    const externalFeaturesCount=window.LegendLayerCreator?.getLeafletSelectionCount?.()||0;
     // 模板要素选中（与图块/图形选择同等的选择态展示）
     const tplSel=window.Cartography?.getSelectedTemplateElement?.();
     const tplCount=tplSel?1:0;
-    const total=graphicsCount+featuresCount+tplCount;selectionBar.hidden=total===0;
+    const total=graphicsCount+featuresCount+tplCount+externalFeaturesCount;selectionBar.hidden=total===0;
     countEl.textContent=total;
     if(tplCount&&!graphicsCount&&!featuresCount){
       summaryEl.firstChild.textContent='已选择 ';summaryEl.lastChild.textContent=`模板要素「${tplSel.label}」`;
+    }else if(externalFeaturesCount&&!graphicsCount&&!featuresCount&&!tplCount){
+      summaryEl.firstChild.textContent='已选择 ';summaryEl.lastChild.textContent=' 个地图对象';
     }else{
       summaryEl.firstChild.textContent='已选择 ';summaryEl.lastChild.textContent=graphicsCount?' 个图形':' 个要素';
     }
-    // 模板要素/图形不可编辑属性：属性按钮隐藏，仅保留「询问AI」
-    selectionBar.querySelector('[data-selection-action="properties"]').hidden=graphicsCount>0||tplCount>0;
-    if(!propertiesPanel.hidden)renderProperties();
     updateEditControls();
-  }
-  function renderProperties(){
-    const feature=selectedFeatures()[0],graphic=selectedGraphics()[0];
-    const editable=state.stage==='manual-edit'&&feature;
-    $('#mapPropertySaveBtn').hidden=!editable;
-    $('#mapPropertiesContent').innerHTML=editable?`<dt>编号</dt><dd><input class="map-property-field" id="mapPropertyId" value="${feature.id}"></dd><dt>类别</dt><dd><input class="map-property-field" id="mapPropertyType" value="${feature.type}"></dd><dt>面积</dt><dd><input class="map-property-field" id="mapPropertyArea" type="number" value="${feature.area}"></dd><dt>图层</dt><dd>${state.editLayer?.name||'当前图层'}</dd>`
-      :feature?`<dt>编号</dt><dd>${feature.id}${state.selectedFeatures.size>1?' 等 '+state.selectedFeatures.size+' 个':''}</dd><dt>类型</dt><dd>${feature.type}</dd><dt>面积</dt><dd>${feature.area}㎡</dd><dt>数据层</dt><dd>Agent 结果层</dd>`
-      :graphic?`<dt>编号</dt><dd>${graphic.id}</dd><dt>类型</dt><dd>${graphic.type}</dd><dt>数据层</dt><dd>图形标注层</dd>`:'<dt>提示</dt><dd>请先选择对象</dd>';
   }
   function setTool(tool){
     if(tool==='clear-selection'){clearSelection();return;}
     state.tool=tool;resultLayer.classList.toggle('box-selecting',tool==='box-select');graphicsLayer.classList.toggle('drawing',tool.startsWith('graphic-'));resultLayer.style.pointerEvents=tool==='box-select'||tool.startsWith('graphic-')?'auto':'';
     document.querySelectorAll('[data-result-tool],[data-manual-tool],[data-graphic-tool]').forEach(button=>button.classList.toggle('active',button.dataset.resultTool===tool||button.dataset.manualTool===tool||('graphic-'+button.dataset.graphicTool)===tool));closeMenus();
   }
-  function showPanel(panel){stylePanel.hidden=panel!=='style';propertiesPanel.hidden=panel!=='properties';$('#mapEditStyleSection').hidden=state.stage!=='manual-edit';if(panel==='properties')renderProperties();if(panel==='style'&&state.editLayer)$('#mapEditCategoryName').value=selectedFeatures()[0]?.type||state.editLayer.name;}
   function deleteFeatures(){if(state.stage!=='manual-edit'&&state.stage!=='cartography-edit'){toast('请先进入编辑模式');return;}if(!state.selectedFeatures.size){toast('请先选择结果要素');return;}const count=state.selectedFeatures.size;state.features=state.features.filter(item=>!state.selectedFeatures.has(item.id));clearSelection(false);pushHistory();renderAll();toast('已删除 '+count+' 个结果要素');}
   function deleteGraphics(){if(!state.selectedGraphics.size){toast('请先选择图形');return;}const count=state.selectedGraphics.size;state.graphics=state.graphics.filter(item=>!state.selectedGraphics.has(item.id));clearSelection(false);if(state.stage==='manual-edit')pushHistory();renderAll();toast('已删除 '+count+' 个图形');}
   function addPolygon(){const id='A-'+String(Date.now()).slice(-4),offset=state.features.length%5*14;state.features.push({id,type:'商业用地',area:6180,points:`410,280 ${470+offset},265 ${510+offset},320 445,345`});pushHistory();renderAll();toast('已新增 1 个面要素');}
   function mergeFeatures(){const chosen=selectedFeatures();if(chosen.length<2){toast('请至少选择 2 个要素');return;}const merged={...chosen[0],id:'A-M'+String(Date.now()).slice(-3),area:chosen.reduce((sum,item)=>sum+item.area,0)};state.features=state.features.filter(item=>!state.selectedFeatures.has(item.id));state.features.push(merged);clearSelection(false);pushHistory();renderAll();toast('已合并 '+chosen.length+' 个要素');}
   function moveFeature(){if(!state.selectedFeatures.size){toast('请先选择结果要素');return;}state.selectedFeatures.forEach(id=>{const feature=state.features.find(item=>item.id===id);feature.points=feature.points.split(' ').map(pair=>{const [x,y]=pair.split(',').map(Number);return `${x+12},${y-8}`;}).join(' ');});pushHistory();renderAll();toast('已移动选中要素');}
-  // 修改（线/面）：打开属性面板编辑要素属性
-  function modifyFeature(){
-    if(!state.selectedFeatures.size){toast('请先选择要素');return;}
-    showPanel('properties');
-    toast('可修改选中要素的编号 / 类别 / 面积');
-  }
   function vertexEdit(){if(!state.selectedFeatures.size){toast('请先选择结果要素');return;}const feature=selectedFeatures()[0],pairs=feature.points.split(' ');const [x,y]=pairs[1].split(',').map(Number);pairs[1]=`${x+12},${y-10}`;feature.points=pairs.join(' ');pushHistory();renderAll();toast('已调整边界节点');}
 
   function transformFeatures(kind){
@@ -177,7 +161,7 @@
     toast(`已进入手动编辑 · ${mapData.name}（按几何类型提供编辑能力）`);
   }
   function saveLayerEdit(){state.savedSnapshot=snapshot();if(state.editLayer?.id)window.MapLayers?.updateEditorFeatures?.(state.editLayer.id,state.features);toast(`已保存“${state.editLayer?.name||'当前图层'}”的编辑（模拟）`);document.dispatchEvent(new CustomEvent('map:layer-edit-saved',{detail:{layer:state.editLayer,featureCount:state.features.length}}));}
-  function exitLayerEdit(){const layerName=state.editLayer?.name||'当前图层',keepManagedResult=state.editLayer?.id==='agent-result'&&window.MapLayers?.getLoaded?.().some(layer=>layer.id==='agent-result'&&layer.visible);clearSelection();showPanel(null);setTool('select');state.history=[];state.historyIndex=-1;
+  function exitLayerEdit(){const layerName=state.editLayer?.name||'当前图层',keepManagedResult=state.editLayer?.id==='agent-result'&&window.MapLayers?.getLoaded?.().some(layer=>layer.id==='agent-result'&&layer.visible);clearSelection();setTool('select');state.history=[];state.historyIndex=-1;
     if(state.returnStage==='result'){setStage('result');resultLayer.hidden=false;graphicsLayer.hidden=false;$('#mapBadge').textContent='Agent 结果审阅 · 商业用地筛选结果';}
     else if(state.returnStage==='cartography-edit'){
       // 手动编辑退出 → 返回制图模式工具栏
@@ -233,7 +217,6 @@
   function exitCartographyEdit(){
     const mapName=state.editLayer?.name||'现状用地图';
     clearSelection();
-    showPanel(null);
     setTool('select');
     state.history=[];
     state.historyIndex=-1;
@@ -296,6 +279,8 @@
     const tplSel=window.Cartography?.getSelectedTemplateElement?.();
     if(tplSel)return{type:'template-element',count:1,label:tplSel.label,elementType:tplSel.type,templateIdx:tplSel.idx,element:{...tplSel.element}};
     if(state.selectedFeatures.size)return{type:'map-features',count:state.selectedFeatures.size,layerName:'商业用地筛选结果',featureIds:[...state.selectedFeatures]};
+    const externalContext=window.LegendLayerCreator?.getContextForAI?.();
+    if(externalContext)return externalContext;
     if(state.selectedGraphics.size){const selected=selectedGraphics();return{type:selected.length===1?'map-graphic':'map-graphics',count:selected.length,graphicType:selected[0]?.type,graphicIds:selected.map(item=>item.id),label:selected[0]?.text||'地图标注区域'};}
     return null;
   }
@@ -333,11 +318,11 @@
   });
   resultToolbar.addEventListener('click',event=>{
     const tool=event.target.closest('[data-result-tool]')?.dataset.resultTool,graphic=event.target.closest('[data-graphic-tool]')?.dataset.graphicTool;if(graphic){setTool('graphic-'+graphic);return;}if(!tool)return;
-    if(tool==='manual-edit')enterManualEdit();else if(tool==='properties'||tool==='style')showPanel(tool);else if(tool==='save')saveResult();else setTool(tool);
+    if(tool==='manual-edit')enterManualEdit();else if(tool==='save')saveResult();else setTool(tool);
   });
   manualToolbar.addEventListener('click',event=>{
     const tool=event.target.closest('[data-manual-tool]')?.dataset.manualTool,graphic=event.target.closest('[data-graphic-tool]')?.dataset.graphicTool;if(graphic){setTool('graphic-'+graphic);return;}if(!tool)return;
-    const actions={'move-feature':moveFeature,'modify-feature':modifyFeature,'delete-feature':deleteFeatures,'copy-feature':copyFeatures,'paste-feature':pasteFeatures,'rotate-feature':()=>transformFeatures('rotate'),'scale-feature':()=>transformFeatures('scale'),'vertex-edit':vertexEdit,'split-feature':splitFeature,'clip-feature':clipFeature,properties:()=>showPanel('properties'),style:()=>showPanel('style'),undo,redo,'save-edit':saveLayerEdit,'exit-edit':exitLayerEdit};
+    const actions={'move-feature':moveFeature,'delete-feature':deleteFeatures,'copy-feature':copyFeatures,'paste-feature':pasteFeatures,'rotate-feature':()=>transformFeatures('rotate'),'scale-feature':()=>transformFeatures('scale'),'vertex-edit':vertexEdit,'split-feature':splitFeature,'clip-feature':clipFeature,undo,redo,'save-edit':saveLayerEdit,'exit-edit':exitLayerEdit};
     actions[tool]?actions[tool]():setTool(tool);
   });
   // 制图工具栏事件
@@ -357,9 +342,6 @@
           state.features.forEach(f=>state.selectedFeatures.add(f.id));
           renderAll();toast(`已全选 ${state.features.length} 个要素`);
           break;
-        case 'properties':
-          if(!state.selectedFeatures.size&&!state.selectedGraphics.size){toast('请先选择对象');break;}
-          showPanel('properties');break;
         case 'manual-edit':
           enterCartographyManualEdit();break;
         case 'confirm':
@@ -373,7 +355,7 @@
       }
     });
   }
-  selectionBar.addEventListener('click',event=>{const action=event.target.closest('[data-selection-action]')?.dataset.selectionAction;if(action==='ask-ai')askAI();if(action==='reanalyze')askAI('请重新分析选中区域，检查是否存在遗漏或误判。');if(action==='properties')showPanel('properties');if(action==='manual-delete')state.selectedGraphics.size?deleteGraphics():deleteFeatures();});
+  selectionBar.addEventListener('click',event=>{const action=event.target.closest('[data-selection-action]')?.dataset.selectionAction;if(action==='ask-ai')askAI();if(action==='reanalyze')askAI('请重新分析选中区域，检查是否存在遗漏或误判。');if(action==='manual-delete')state.selectedGraphics.size?deleteGraphics():deleteFeatures();});
   // 选择元素栏支持拖动移动：按住非按钮区域拖拽，松手固定位置
   {
     let barDrag = null;
@@ -401,32 +383,6 @@
     selectionBar.addEventListener('pointerup', endBarDrag);
     selectionBar.addEventListener('pointercancel', endBarDrag);
   }
-  document.querySelectorAll('[data-panel-close]').forEach(button=>button.addEventListener('click',()=>button.closest('.map-result-panel').hidden=true));
-  $('#resultFillOpacity').addEventListener('input',event=>{state.fillOpacity=Number(event.target.value)/100;renderFeatures();});$('#resultStrokeWidth').addEventListener('input',event=>{state.strokeWidth=Number(event.target.value);renderFeatures();});
-  document.querySelectorAll('[data-result-color]').forEach(button=>button.addEventListener('click',()=>{state.color=button.dataset.resultColor;document.querySelectorAll('[data-result-color]').forEach(item=>item.classList.toggle('active',item===button));renderFeatures();if(state.stage==='manual-edit')pushHistory();}));
-  document.querySelectorAll('[data-edit-style-action]').forEach(button=>button.addEventListener('click',()=>{
-    if(state.stage!=='manual-edit')return;
-    const action=button.dataset.editStyleAction;
-    if(action==='apply-create-legend'){
-      // 编辑当前选中元素样式 + 类别命名 → 应用到选中对象并创建新图例
-      if(!state.selectedFeatures.size){toast('请先在图层上选择对象');return;}
-      const name=$('#mapEditCategoryName').value.trim()||'未命名图例';
-      const stroke=$('#mapEditStrokeColor').value;
-      const featureIds=[...state.selectedFeatures];
-      const created=window.Cartography?.createLegendFromStyle?.({
-        name, color:state.color, borderColor:stroke, borderWidth:state.strokeWidth, featureIds
-      });
-      if(!created){
-        // 兜底：至少把样式应用到选中对象
-        const targets=selectedFeatures();
-        targets.forEach(feature=>{feature.fill=state.color;feature.stroke=stroke;feature.fillOpacity=state.fillOpacity;feature.strokeWidth=state.strokeWidth;});
-        pushHistory();renderAll();
-      }
-    }
-  }));
-  $('#mapPropertySaveBtn').addEventListener('click',()=>{
-    const feature=selectedFeatures()[0];if(!feature)return;const oldId=feature.id,newId=$('#mapPropertyId').value.trim()||oldId;feature.id=newId;feature.type=$('#mapPropertyType').value.trim()||feature.type;feature.area=Number($('#mapPropertyArea').value)||0;if(newId!==oldId){state.selectedFeatures.delete(oldId);state.selectedFeatures.add(newId);}pushHistory();renderAll();showPanel('properties');toast('属性已保存');
-  });
 
   resultLayer.addEventListener('pointerdown',event=>{
     if(state.tool==='box-select'){const rect=resultLayer.getBoundingClientRect();state.dragStart={x:event.clientX-rect.left,y:event.clientY-rect.top};box.hidden=false;box.style.left=state.dragStart.x+'px';box.style.top=state.dragStart.y+'px';box.style.width='0';box.style.height='0';resultLayer.setPointerCapture(event.pointerId);return;}
@@ -446,6 +402,10 @@
 
   // 供图例管理使用：读取选中要素 ID / 将样式应用到指定要素
   function getSelectedFeatureIds(){return [...state.selectedFeatures];}
+  function getLegendLayerSelection(){
+    if(!state.selectedFeatures.size||!state.editLayer)return null;
+    return {layer:{...state.editLayer},features:cloneData(selectedFeatures())};
+  }
   function applyStyleToFeatures(ids,style){
     const set=new Set(ids||[]);if(!set.size)return 0;
     let count=0;
@@ -454,6 +414,6 @@
     return count;
   }
 
-  window.MapResultInteraction={showResults,locateResults,clearSelection,enterManualEdit,enterCartographyManualEdit,startLayerEdit,saveLayerEdit,exitLayerEdit,finishManualEdit,cancelManualEdit,enterCartographyEdit,exitCartographyEdit,saveCartographyEdit,confirmCartography,setCartoPrimaryButton,getSelectedFeatureIds,applyStyleToFeatures,undo,redo,getState:()=>({stage:state.stage,editLayer:state.editLayer,featureCount:state.features.length,graphicCount:state.graphics.length,selectedFeatureCount:state.selectedFeatures.size,selectedGraphicCount:state.selectedGraphics.size,tool:state.tool,canUndo:state.historyIndex>0,canRedo:state.historyIndex>=0&&state.historyIndex<state.history.length-1})};
+  window.MapResultInteraction={showResults,locateResults,clearSelection,enterManualEdit,enterCartographyManualEdit,startLayerEdit,saveLayerEdit,exitLayerEdit,finishManualEdit,cancelManualEdit,enterCartographyEdit,exitCartographyEdit,saveCartographyEdit,confirmCartography,setCartoPrimaryButton,getSelectedFeatureIds,getLegendLayerSelection,refreshSelectionUI:updateSelectionUI,applyStyleToFeatures,undo,redo,getState:()=>({stage:state.stage,editLayer:state.editLayer,featureCount:state.features.length,graphicCount:state.graphics.length,selectedFeatureCount:state.selectedFeatures.size,selectedGraphicCount:state.selectedGraphics.size,tool:state.tool,canUndo:state.historyIndex>0,canRedo:state.historyIndex>=0&&state.historyIndex<state.history.length-1})};
   setStage('workspace');
 })();

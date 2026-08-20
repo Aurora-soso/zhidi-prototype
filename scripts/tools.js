@@ -51,6 +51,14 @@ const toolGroupsData = [
         functions:['观察点可视域计算','通视性判定','结合 DEM 高程'],
         inputs:[{name:'DEM',type:'file',desc:'数字高程模型'},{name:'观察点',type:'GeoJSON',desc:'观测位置'}],
         outputs:[{name:'可视域',type:'GeoJSON',desc:'可见范围多边形'}]},
+      {name:'高德地图 MCP', desc:'连接高德地图开放能力，提供地理编码、路线规划和周边搜索等服务', icon:'🧭', color:'blue', views:'6.6k次使用', stars:'2.9k收藏', type:'mcp',
+        functions:['地址与坐标双向解析','驾车、步行和骑行路线规划','按关键词检索周边地点'],
+        scenarios:['将自然语言地址转换为空间坐标','为外业调查规划出行路线','检索项目周边的公共服务设施'],
+        mcpTools:[
+          {name:'maps_geo', desc:'将结构化地址解析为经纬度坐标'},
+          {name:'maps_regeocode', desc:'根据经纬度查询行政区划与详细地址'},
+          {name:'maps_direction', desc:'规划驾车、步行或骑行路线'},
+          {name:'maps_around_search', desc:'按中心点和关键词搜索周边地点'}]},
     ]
   },
   {
@@ -72,9 +80,33 @@ const toolGroupsData = [
         functions:['字段计算与新增','条件筛选','统计汇总与导出'],
         inputs:[{name:'属性表',type:'table',desc:'要素属性数据'}],
         outputs:[{name:'处理结果',type:'table',desc:'计算/筛选后表格'}]},
+      {name:'PostGIS 数据库连接 MCP', desc:'安全连接 PostGIS 数据库，在授权范围内查询、统计和管理空间数据', icon:'🐘', color:'green', views:'2.3k次使用', stars:'986收藏', type:'mcp',
+        functions:['执行空间 SQL 查询','浏览数据库结构与空间表','返回可视化所需的 GeoJSON 数据'],
+        scenarios:['查询项目库中的空间要素','进行数据库侧空间统计分析','为地图快速加载筛选后的数据'],
+        mcpTools:[
+          {name:'list_schemas', desc:'列出当前连接中可访问的数据库模式'},
+          {name:'list_tables', desc:'查看指定模式下的数据表和空间表'},
+          {name:'describe_table', desc:'读取表字段、类型、主键和空间参考信息'},
+          {name:'query', desc:'执行只读 SQL 并返回表格或 GeoJSON 结果'}]},
     ]
   }
 ];
+
+// Skill 详情页的适用场景。与输入输出参数解耦，强调用户在什么业务情境下使用工具。
+const toolScenarioMap = {
+  '建筑合规提取':['卫星影像中的建筑物普查','违建线索的批量初筛','建筑轮廓底图快速生产'],
+  '遥感图斑':['国土调查图斑自动提取','耕地与林地变化巡查','遥感解译成果矢量化'],
+  '土地租用分类':['用地现状自动分类','土地用途变化核查','国土空间规划底数分析'],
+  '变化检测':['施工与占地变化监测','灾前灾后影像对比','定期遥感巡查报告生成'],
+  '缓冲区分析':['项目影响范围评估','设施服务半径分析','生态保护距离核查'],
+  '叠置分析':['规划范围与现状用地比对','多部门图层冲突检查','空间条件组合筛选'],
+  '网络分析':['应急救援最短路径规划','公共设施服务区分析','多站点通行成本评估'],
+  '视域分析':['观景点与瞭望塔选址','监控设施覆盖评估','景观通视性分析'],
+  '坐标转换':['外业坐标数据统一入库','跨坐标系图层套合','地图服务坐标纠偏'],
+  '坐标转换GEO':['批量坐标文件标准化','互联网地图数据纠偏','多来源点位数据融合'],
+  '数据裁剪':['按行政区导出专题数据','项目范围数据快速提取','大体量栅格分区处理'],
+  '属性表处理':['要素字段批量计算','业务数据条件筛选','统计结果整理与导出']
+};
 
 // 已添加原子工具列表（管理面板与管理弹窗共用此数据源）
 // source 表示工具来源：square=从原子工具广场获取，mine=用户上传/接入/自定义。
@@ -517,10 +549,12 @@ const tdIcon=$('#tdIcon');
 const tdHeadSub=$('#tdHeadSub');
 const tdIntro=$('#tdIntro');
 const tdFuncs=$('#tdFuncs');
-const tdTypeBadge=$('#tdTypeBadge');
-const tdInputs=$('#tdInputs');
-const tdOutputs=$('#tdOutputs');
+const tdScenarios=$('#tdScenarios');
 const tdStatus=$('#tdStatus');
+const tdTabs=$('#tdTabs');
+const tdMcpToolsTab=$('#tdMcpToolsTab');
+const tdToolsCount=$('#tdToolsCount');
+const tdToolsList=$('#tdToolsList');
 const tdAddBtn=$('#tdAddBtn');
 const tdCallBtn=$('#tdCallBtn');
 let tdCurrent=null;
@@ -532,13 +566,15 @@ function findTool(name){
   }
   return null;
 }
-function ioRows(rows){
-  if(!rows||!rows.length) return '<div class="td-io-empty">未定义</div>';
-  return rows.map(r=>`
-    <div class="td-io-row">
-      <div class="td-io-name">${r.name}<span class="td-io-type">${r.type}</span></div>
-      <div class="td-io-desc">${r.desc||''}</div>
-    </div>`).join('');
+function switchToolDetailTab(tabName){
+  tdTabs.querySelectorAll('.td-tab').forEach(tab=>{
+    const active=tab.dataset.tab===tabName;
+    tab.classList.toggle('active',active);
+    tab.setAttribute('aria-selected',String(active));
+  });
+  document.querySelectorAll('#page-tool-detail .td-panel').forEach(panel=>{
+    panel.classList.toggle('active',panel.dataset.panel===tabName);
+  });
 }
 function openToolDetail(name){
   const r=findTool(name);
@@ -552,16 +588,28 @@ function openToolDetail(name){
   tdIntro.textContent=t.desc||'';
   tdFuncs.innerHTML=(t.functions||[]).map(f=>`<li>${f}</li>`).join('');
   const isMcp=t.type==='mcp';
-  // 类型标签：skill/mcp 标签 + 业务类型标签
-  tdTypeBadge.innerHTML=`<span class="td-tag ${t.type}">${isMcp?'MCP':'Skill'}</span><span class="td-tag biz">${biz}</span>`;
-  tdInputs.innerHTML=ioRows(t.inputs);
-  tdOutputs.innerHTML=ioRows(t.outputs);
+  const scenarios=t.scenarios&&t.scenarios.length?t.scenarios:(toolScenarioMap[t.name]||[`适用于${biz}相关业务流程`]);
+  tdScenarios.innerHTML=scenarios.map((scenario,index)=>`
+    <div class="td-scenario"><span>${String(index+1).padStart(2,'0')}</span><p>${scenario}</p></div>`).join('');
+  tdMcpToolsTab.hidden=!isMcp;
+  const mcpTools=t.mcpTools||[];
+  tdToolsCount.textContent=`${mcpTools.length} 个工具`;
+  tdToolsList.innerHTML=mcpTools.length?mcpTools.map(tool=>`
+    <div class="td-tool-item">
+      <div class="td-tool-icon">⌘</div>
+      <div><div class="td-tool-name">${tool.name}</div><div class="td-tool-desc">${tool.desc}</div></div>
+    </div>`).join(''):'<div class="td-tools-empty">当前 MCP 暂未提供可调用工具</div>';
+  switchToolDetailTab('overview');
   const added=isAtomAdded(t.name);
   const entry=atomTools.find(x=>x.name===t.name||x.name.startsWith(t.name+' '));
   const enabled=entry?entry.enabled:false;
+  const configState=isMcp
+    ? `<span class="td-pill ${entry&&entry.configStatus==='ok'?'on':'warn'}">${entry&&entry.configStatus==='ok'?'✓ MCP 配置成功':'! MCP 待配置或配置失败'}</span>`
+    : '';
   tdStatus.innerHTML=`
     <span class="td-pill ${added?'on':'off'}">${added?'✓ 已添加':'＋ 未添加'}</span>
-    <span class="td-pill ${added&&enabled?'on':'off'}">${added&&enabled?'✓ 已启用':'⨯ 未启用'}</span>`;
+    <span class="td-pill ${added&&enabled?'on':'off'}">${added&&enabled?'✓ 已启用':'⨯ 未启用'}</span>
+    ${configState}`;
   tdAddBtn.textContent=added?'已添加 · 管理':'＋ 添加到我的工具';
   switchPage('tool-detail');
 }
@@ -569,6 +617,10 @@ function closeToolDetail(){ tdCurrent=null; switchPage('tools'); }
 
 $('#tdBack').addEventListener('click', closeToolDetail);
 $('#tdClose').addEventListener('click', closeToolDetail);
+tdTabs.addEventListener('click',event=>{
+  const tab=event.target.closest('.td-tab:not([hidden])');
+  if(tab) switchToolDetailTab(tab.dataset.tab);
+});
 
 tdAddBtn.addEventListener('click', ()=>{
   if(!tdCurrent) return;

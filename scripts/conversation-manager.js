@@ -10,7 +10,7 @@
 //   Workspace:   { id, name, path, createdAt, updatedAt, conversations:[] }
 //   Conversation:{ id, title, type:'task'|'workspace', workspaceId, workspaceName,
 //                  createdAt, updatedAt, lastMessage, messageCount, messages:[] }
-//   messages:    [{ role:'user'|'ai', text }]
+//   messages:    [{ role:'user'|'ai', text, ts, agent }]  // ts:时间戳(ms) | agent:智能体名称(role==='ai'时记录)
 (function(){
   const LS_KEY = 'zhidi.conversationState';
 
@@ -104,11 +104,15 @@
       { id:'space-sz', name:'深圳规划项目', path:'E:/GIS项目/深圳规划', createdAt: t - 20*day, updatedAt: t - 2*h, conversations:[] },
       { id:'space-ns', name:'南山更新项目', path:'E:/GIS项目/南山更新', createdAt: t - 12*day, updatedAt: t - 3*day, conversations:[] },
     ];
-    const mk = (id, title, type, workspaceId, workspaceName, updatedAt, messages) => ({
-      id, title, type, workspaceId, workspaceName,
-      createdAt: updatedAt - 2*h, updatedAt, lastMessage: messages[messages.length-1].text,
-      messageCount: messages.length, messages,
-    });
+    const mk = (id, title, type, workspaceId, workspaceName, updatedAt, messages) => {
+      // 回填 ts：按消息顺序递增，保证种子数据可按时间排序与展示
+      const seeded = messages.map((m, i) => ({ ...m, ts: updatedAt - (messages.length - i) * 60000 }));
+      return {
+        id, title, type, workspaceId, workspaceName,
+        createdAt: updatedAt - 2*h, updatedAt, lastMessage: messages[messages.length-1].text,
+        messageCount: messages.length, messages: seeded,
+      };
+    };
     const tasks = [
       mk('task-futian', '福田区商业用地筛选', 'task', null, '', t - 1*h, [
         { role:'user', text:'帮我筛选福田区 5000 平米以上的商业用地' },
@@ -276,11 +280,26 @@
     persist(); renderAll();
   }
 
+  // ============ 置顶（仅任务对话） ============
+  // pinnedAt 为置顶时间戳：非空表示已置顶；置顶之间按置顶时间倒序（最近置顶最靠前）
+  function togglePin(id){
+    const c = state.conversations.find(x => x.id === id);
+    if(!c || c.type !== 'task') return;
+    if(c.pinnedAt){
+      c.pinnedAt = null;
+      if(typeof toast === 'function') toast('📌 已取消置顶');
+    } else {
+      c.pinnedAt = now();
+      if(typeof toast === 'function') toast('📌 已置顶');
+    }
+    persist(); renderTree();
+  }
+
   // ============ 消息记录（由 chat.js 的 addBubble 调用） ============
-  function recordMessage(role, text){
+  function recordMessage(role, text, agent){
     const c = state.conversations.find(x => x.id === state.currentConversation);
     if(!c) return;
-    c.messages.push({ role, text });
+    c.messages.push({ role, text, ts: now(), agent: agent || null });
     c.messageCount = c.messages.length;
     c.updatedAt = now();
     c.lastMessage = text;
@@ -347,16 +366,28 @@
       const q = searchQuery.toLowerCase();
       list = list.filter(c => c.title.toLowerCase().includes(q));
     }
+    // 置顶排序：置顶在前（置顶之间按置顶时间倒序），未置顶保持原有顺序（稳定排序）
+    list.sort((a, b) => {
+      const ap = a.pinnedAt ? 1 : 0, bp = b.pinnedAt ? 1 : 0;
+      if(ap !== bp) return bp - ap;
+      if(ap) return (b.pinnedAt - a.pinnedAt);
+      return 0;
+    });
     return list;
   }
 
   function convItemHTML(c, indent){
     const active = c.id === state.currentConversation;
+    const pinned = !!c.pinnedAt;
     const pad = indent ? ' style="padding-left:' + indent + 'px"' : '';
-    return '<div class="conv-item' + (active ? ' active' : '') + '" data-id="' + c.id + '"' + pad + '>' +
+    const pinBtn = c.type === 'task'
+      ? '<button class="conv-item-pin' + (pinned ? ' pinned' : '') + '" data-id="' + c.id + '" title="' + (pinned ? '取消置顶' : '置顶') + '">📌</button>'
+      : '';
+    return '<div class="conv-item' + (active ? ' active' : '') + (pinned ? ' pinned' : '') + '" data-id="' + c.id + '"' + pad + '>' +
       '<span class="conv-item-icon">📄</span>' +
       '<span class="conv-item-title">' + escapeHtml(c.title) + '</span>' +
       '<span class="conv-item-meta">' + fmtTime(c.updatedAt) + '</span>' +
+      pinBtn +
       '<button class="conv-item-more" data-id="' + c.id + '" title="更多操作">⋯</button>' +
     '</div>';
   }
@@ -457,7 +488,7 @@
     menuEl.innerHTML =
       '<div class="conv-menu-item" data-action="open-folder">📂 打开文件夹</div>' +
       '<div class="conv-menu-item" data-action="rename">✏️ 重命名</div>' +
-      '<div class="conv-menu-item" data-action="analyze">🔍 分析任务</div>' +
+      '<div class="conv-menu-item" data-action="share">🔗 分享任务</div>' +
       '<div class="conv-menu-item danger" data-action="delete">🗑 删除任务</div>';
     menuEl.addEventListener('click', e => {
       const act = e.target.closest('[data-action]');
@@ -465,7 +496,7 @@
       const action = act.dataset.action;
       if(action === 'open-folder') openFolderFlow(id);
       else if(action === 'rename') renameFlow(id);
-      else if(action === 'analyze') analyzeFlow(id);
+      else if(action === 'share') shareFlow(id);
       else if(action === 'delete') deleteFlow(id);
       closeConvMenu();
     });
@@ -493,15 +524,79 @@
     const title = window.prompt('重命名对话', c.title);
     if(title && title.trim()) renameConversation(id, title.trim());
   }
-  // 分析任务：模拟自动分析流程（原型演示：提示开始 → 延时输出分析结果）
-  function analyzeFlow(id){
+  // 完整日期时间格式化（供导出文件标注，区别于列表用的短格式）
+  function fmtDateTime(ts){
+    if(!ts) return '';
+    const d = new Date(ts);
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+      + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+  // 分享任务：将对话完整导出为 Markdown 文件
+  // 满足：①按时间排序并标注发送者(用户/智能体名) ②分轮次 ③保留原文/格式/链接 ④标准语法通用阅读器可打开
+  function exportConversationMarkdown(id){
     const c = state.conversations.find(x => x.id === id);
-    if(!c) return;
-    if(typeof toast === 'function') toast('🔍 正在分析任务「' + c.title + '」…');
-    setTimeout(() => {
-      const pointCount = c.messages.length > 0 ? Math.max(2, Math.min(c.messages.length, 8)) : 2;
-      if(typeof toast === 'function') toast('✅ 分析完成：已提取 ' + pointCount + ' 个关键要点，可查看任务摘要');
-    }, 1200);
+    if(!c){ if(typeof toast === 'function') toast('未找到该对话'); return; }
+    const msgs = Array.isArray(c.messages) ? c.messages : [];
+    if(!msgs.length){ if(typeof toast === 'function') toast('该对话暂无消息，无法导出'); return; }
+
+    // ① 按时间顺序排序（无 ts 时用原始下标兜底，保证稳定）
+    const ordered = msgs
+      .map((m, i) => ({ m, i }))
+      .sort((a, b) => ((a.m.ts || 0) - (b.m.ts || 0)) || (a.i - b.i))
+      .map(x => x.m);
+
+    // ② 分轮次：每条 user 消息开启新一轮，其后 ai 消息归入同一轮
+    const rounds = [];
+    let cur = null;
+    ordered.forEach(m => {
+      if(m.role === 'user'){ cur = { user: [], ai: [] }; rounds.push(cur); cur.user.push(m); }
+      else { if(!cur){ cur = { user: [], ai: [] }; rounds.push(cur); } cur.ai.push(m); }
+    });
+
+    // ③ 组装标准 Markdown（原文逐字输出，保留格式与链接）
+    const L = [];
+    L.push('# 致地对话分享 · ' + c.title);
+    L.push('');
+    const typeLabel = c.type === 'workspace' ? '空间对话' : '任务对话';
+    L.push('> **对话类型**：' + typeLabel + (c.workspaceName ? '（所属空间：' + c.workspaceName + '）' : ''));
+    L.push('> **创建时间**：' + (fmtDateTime(c.createdAt) || '—'));
+    L.push('> **更新时间**：' + (fmtDateTime(c.updatedAt) || '—'));
+    L.push('> **导出时间**：' + fmtDateTime(now()));
+    L.push('> **消息条数**：' + msgs.length + ' 条');
+    L.push('');
+    L.push('---');
+    L.push('');
+    rounds.forEach((r, idx) => {
+      L.push('## 第 ' + (idx + 1) + ' 轮');
+      L.push('');
+      r.user.forEach(m => {
+        L.push('**👤 用户**' + (m.ts ? ' · ' + fmtDateTime(m.ts) : ''));
+        L.push('');
+        L.push(m.text || '');
+        L.push('');
+      });
+      r.ai.forEach(m => {
+        const agentName = (m.role === 'ai' && m.agent) ? m.agent : '致地AI助手';
+        L.push('**🤖 ' + agentName + '**' + (m.ts ? ' · ' + fmtDateTime(m.ts) : ''));
+        L.push('');
+        L.push(m.text || '');
+        L.push('');
+      });
+    });
+    const md = L.join('\n');
+
+    // ④ 触发浏览器下载（text/markdown，任意 Markdown 阅读器可打开）
+    const safeTitle = (c.title || '对话').replace(/[\\/:*?"<>|\n\r]+/g, '_').slice(0, 60);
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = safeTitle + '.md';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    if(typeof toast === 'function') toast('✅ 已导出对话 Markdown：' + safeTitle + '.md');
+  }
+  function shareFlow(id){
+    exportConversationMarkdown(id);
   }
   function deleteFlow(id){
     const c = state.conversations.find(x => x.id === id);
@@ -550,6 +645,9 @@
         openConvMenu(more.dataset.id, r.left, r.bottom);
         return;
       }
+      // 置顶/取消置顶按钮
+      const pinBtn = e.target.closest('.conv-item-pin');
+      if(pinBtn){ e.stopPropagation(); togglePin(pinBtn.dataset.id); return; }
       // 对话条目点击
       const item = e.target.closest('.conv-item');
       if(item) switchConversation(item.dataset.id);
@@ -584,6 +682,7 @@
     switchConversation,
     renameConversation,
     deleteConversation,
+    togglePin,
     generateConversationTitle,
     recordMessage,
     setCurrentWorkspace,
@@ -600,6 +699,7 @@
   window.switchConversation = switchConversation;
   window.renameConversation = renameConversation;
   window.deleteConversation = deleteConversation;
+  window.togglePin = togglePin;
   window.generateConversationTitle = generateConversationTitle;
 
   init();

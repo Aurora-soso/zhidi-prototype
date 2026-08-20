@@ -299,8 +299,6 @@
                     <button type="button" data-result-tool="clear-selection">清除选择</button>
                   </div>
                 </div>
-                <button type="button" data-result-tool="properties">属性</button>
-                <button type="button" data-result-tool="style">样式</button>
                 <div class="map-tool-menu-wrap">
                   <button type="button" data-map-menu-toggle="result-graphics">标注⌄</button>
                   <div class="map-tool-menu" data-map-menu="result-graphics" hidden>
@@ -321,7 +319,6 @@
                   <div class="map-tool-menu map-edit-menu" data-map-menu="edit-basic" hidden>
                     <button type="button" data-manual-tool="select">选择对象</button>
                     <button type="button" data-manual-tool="move-feature" data-requires-selection>移动对象</button>
-                    <button type="button" data-manual-tool="modify-feature" data-geometry-types="线,面" data-requires-selection>修改</button>
                     <button type="button" data-manual-tool="delete-feature" data-requires-selection>删除</button>
                     <button type="button" data-manual-tool="copy-feature" data-requires-selection>复制</button>
                     <button type="button" data-manual-tool="paste-feature" id="mapPasteFeatureBtn" disabled>粘贴</button>
@@ -337,8 +334,6 @@
                     <button type="button" data-manual-tool="clip-feature" data-geometry-types="线,面" data-requires-selection>裁剪</button>
                   </div>
                 </div>
-                <button type="button" data-manual-tool="style">样式管理</button>
-                <button type="button" data-manual-tool="properties" data-requires-selection>属性编辑</button>
                 <button type="button" data-manual-tool="undo" id="mapUndoBtn" disabled>撤销</button>
                 <button type="button" data-manual-tool="redo" id="mapRedoBtn" disabled>重做</button>
                 <button type="button" data-manual-tool="save-edit" class="map-save-edit">保存编辑</button>
@@ -369,7 +364,6 @@
                     <button type="button" data-graphic-action="clear-all" class="map-menu-danger">清除所有标记</button>
                   </div>
                 </div>
-                <button type="button" data-carto-tool="properties">属性</button>
                 <button type="button" data-carto-tool="manual-edit" class="map-manual-entry">手动编辑</button>
                 <button type="button" data-carto-tool="select-all">全选</button>
                 <div class="map-tool-divider"></div>
@@ -527,28 +521,23 @@
                 <span id="mapSelectionSummary">已选择 <b id="mapSelectedCount">0</b> 个要素</span>
                 <button type="button" data-selection-action="ask-ai">询问 AI</button>
                 <button type="button" data-selection-action="reanalyze">重新分析</button>
-                <button type="button" data-selection-action="properties">查看属性</button>
                 <button type="button" data-selection-action="manual-delete" hidden>删除</button>
               </div>
-              <aside class="map-result-panel" id="mapStylePanel" hidden aria-label="图层样式">
-                <div class="mrp-head"><b>图层样式</b><button type="button" data-panel-close>✕</button></div>
-                <label>填充透明度 <input id="resultFillOpacity" type="range" min="10" max="80" value="38"></label>
-                <label>边框粗细 <input id="resultStrokeWidth" type="range" min="1" max="6" value="2"></label>
-                <div class="result-color-options" aria-label="颜色选项">
-                  <button type="button" data-result-color="#10B981" class="active" aria-label="绿色"></button>
-                  <button type="button" data-result-color="#3B82F6" aria-label="蓝色"></button>
-                  <button type="button" data-result-color="#F59E0B" aria-label="橙色"></button>
+              <div class="map-object-context-menu" id="mapObjectContextMenu" role="menu" hidden>
+                <button type="button" id="createLegendLayerMenuItem" role="menuitem">新增图例和图层</button>
+                <small id="createLegendLayerMenuHint" hidden>仅支持选择同一图层中的对象</small>
+              </div>
+              <aside class="map-attribute-table" id="mapAttributeTable" hidden aria-label="图层属性表">
+                <div class="mat-head"><b id="matTitle">属性表</b><div class="mat-head-actions"><button type="button" id="matAddField" title="添加字段名">+ 添加字段</button><button type="button" id="matClose" aria-label="关闭属性表">✕</button></div></div>
+                <div class="mat-body">
+                  <div class="mat-scroll" id="matScroll">
+                    <table class="mat-table">
+                      <thead id="matThead"></thead>
+                      <tbody id="matTbody"></tbody>
+                    </table>
+                  </div>
                 </div>
-                <div class="map-edit-style-section" id="mapEditStyleSection" hidden>
-                  <label>类别名称 <input type="text" id="mapEditCategoryName" value="商业用地"></label>
-                  <label>边框颜色 <input type="color" id="mapEditStrokeColor" value="#047857"></label>
-                  <div class="map-edit-panel-actions"><button type="button" data-edit-style-action="apply-create-legend">应用到选中对象并创建新图例</button></div>
-                </div>
-              </aside>
-              <aside class="map-result-panel" id="mapPropertiesPanel" hidden aria-label="要素属性">
-                <div class="mrp-head"><b>要素属性</b><button type="button" data-panel-close>✕</button></div>
-                <div id="mapPropertiesContent" class="map-properties-content"></div>
-                <button type="button" class="map-property-save" id="mapPropertySaveBtn" hidden>保存属性</button>
+                <div class="mat-foot" id="matFoot">未选中图层</div>
               </aside>
             </section>
             <section class="workspace-view workspace-image-view" id="workspaceImageView" data-workspace-mode="image" aria-label="图片工作区" hidden></section>
@@ -1234,36 +1223,39 @@
               </div>
               <button class="td-close" id="tdClose" title="关闭">✕</button>
             </div>
+            <div class="td-tabs" id="tdTabs" role="tablist" aria-label="工具详情">
+              <button class="td-tab active" type="button" data-tab="overview" role="tab" aria-selected="true">详情</button>
+              <button class="td-tab" id="tdMcpToolsTab" type="button" data-tab="tools" role="tab" aria-selected="false" hidden>工具</button>
+            </div>
             <div class="td-body">
-              <section class="td-sec">
-                <h4><span class="td-sec-ic">📌</span>基本信息</h4>
-                <p class="td-intro" id="tdIntro"></p>
-              </section>
-              <section class="td-sec">
-                <h4><span class="td-sec-ic">🧩</span>功能说明</h4>
-                <ul class="td-funcs" id="tdFuncs"></ul>
-              </section>
-              <section class="td-sec">
-                <h4><span class="td-sec-ic">🏷️</span>类型标签</h4>
-                <div id="tdTypeBadge"></div>
-              </section>
-              <section class="td-sec">
-                <h4><span class="td-sec-ic">🔁</span>输入输出定义</h4>
-                <div class="td-io">
-                  <div class="td-io-col">
-                    <div class="td-io-title">输入参数</div>
-                    <div id="tdInputs"></div>
+              <div class="td-panel active" data-panel="overview" role="tabpanel">
+                <section class="td-sec">
+                  <h4><span class="td-sec-ic">📌</span>工具简介</h4>
+                  <p class="td-intro" id="tdIntro"></p>
+                </section>
+                <section class="td-sec">
+                  <h4><span class="td-sec-ic">🧩</span>功能说明</h4>
+                  <ul class="td-funcs" id="tdFuncs"></ul>
+                </section>
+                <section class="td-sec">
+                  <h4><span class="td-sec-ic">🎯</span>适用场景</h4>
+                  <div class="td-scenarios" id="tdScenarios"></div>
+                </section>
+                <section class="td-sec">
+                  <h4><span class="td-sec-ic">⚙️</span>配置状态</h4>
+                  <div class="td-status" id="tdStatus"></div>
+                </section>
+              </div>
+              <div class="td-panel" data-panel="tools" role="tabpanel">
+                <div class="td-tools-head">
+                  <div>
+                    <h4>MCP 可调用工具</h4>
+                    <p>以下工具可由该 MCP 服务在对话或任务中调用。</p>
                   </div>
-                  <div class="td-io-col">
-                    <div class="td-io-title">输出结果</div>
-                    <div id="tdOutputs"></div>
-                  </div>
+                  <span class="td-tools-count" id="tdToolsCount"></span>
                 </div>
-              </section>
-              <section class="td-sec">
-                <h4><span class="td-sec-ic">⚙️</span>配置状态</h4>
-                <div class="td-status" id="tdStatus"></div>
-              </section>
+                <div class="td-tools-list" id="tdToolsList"></div>
+              </div>
             </div>
             <div class="td-foot">
               <button class="td-btn ghost" id="tdAddBtn"></button>
@@ -1574,10 +1566,35 @@
 <!-- 选择矢量数据弹窗 -->
 <div class="gis-modal-mask" id="vectorSelectMask">
   <div class="gis-modal vector-select-modal" role="dialog" aria-modal="true" aria-labelledby="vectorSelectTitle">
-    <div class="gis-modal-head"><div><h3 id="vectorSelectTitle">选择矢量数据</h3><p id="vectorWorkspacePath"></p></div><button class="gis-modal-close" id="vectorSelectClose" title="关闭">✕</button></div>
+    <div class="gis-modal-head"><div><h3 id="vectorSelectTitle">选择数据</h3><p id="vectorWorkspacePath"></p></div><button class="gis-modal-close" id="vectorSelectClose" title="关闭">✕</button></div>
     <div class="vector-select-head"><span>选择</span><span>文件名</span><span>数据类型</span></div>
     <div class="vector-select-list" id="vectorSelectList"></div>
     <div class="gis-modal-foot"><span class="vector-selected-count">已选择 <b id="vectorSelectedCount">0</b> 个图层</span><button class="gis-btn ghost" id="vectorSelectCancel">取消</button><button class="gis-btn primary" id="vectorLoadConfirm">加载到地图</button></div>
+  </div>
+</div>
+
+<!-- 添加属性字段弹窗 -->
+<div class="gis-modal-mask" id="matAddFieldMask">
+  <div class="gis-modal mat-add-field-modal" role="dialog" aria-modal="true" aria-labelledby="matAddFieldTitle">
+    <div class="gis-modal-head"><h3 id="matAddFieldTitle">添加字段名</h3><button class="gis-modal-close" id="matAddFieldClose" title="关闭">✕</button></div>
+    <div class="gis-modal-body">
+      <p class="gis-modal-desc">为当前图层的所有要素新增一个属性字段，新增后可在属性表中双击编辑其值。</p>
+      <label class="gis-path-field"><span>字段名称</span><input id="matAddFieldInput" placeholder="例如：备注、用途、权属人…" /></label>
+    </div>
+    <div class="gis-modal-foot"><button class="gis-btn ghost" id="matAddFieldCancel">取消</button><button class="gis-btn primary" id="matAddFieldConfirm">添加字段</button></div>
+  </div>
+</div>
+
+<!-- 从所选地图对象创建新图例和图层 -->
+<div class="gis-modal-mask" id="createLegendLayerMask">
+  <div class="gis-modal create-legend-layer-modal" role="dialog" aria-modal="true" aria-labelledby="createLegendLayerTitle">
+    <div class="gis-modal-head"><h3 id="createLegendLayerTitle">新增图例和图层</h3><button class="gis-modal-close" id="createLegendLayerClose" title="关闭" aria-label="关闭">✕</button></div>
+    <div class="gis-modal-body">
+      <div class="create-legend-layer-source"><span>来源图层：<b id="createLegendLayerSource">—</b></span><span>已选择对象：<b id="createLegendLayerCount">0</b> 个</span></div>
+      <label class="gis-path-field create-legend-layer-field"><span>图例名称</span><input id="createLegendLayerName" maxlength="40" autocomplete="off" placeholder="请输入图层和图例名称" aria-describedby="createLegendLayerError" /></label>
+      <div class="create-legend-layer-error" id="createLegendLayerError" role="alert" hidden></div>
+    </div>
+    <div class="gis-modal-foot"><button class="gis-btn ghost" id="createLegendLayerCancel">取消</button><button class="gis-btn primary" id="createLegendLayerConfirm">创建</button></div>
   </div>
 </div>
 
@@ -1595,10 +1612,12 @@
 <script src="scripts/map.js"></script>
 <script src="scripts/gis-workspace.js?v=20260814-result-layer-edit-3"></script>
 <script src="scripts/conversation-manager.js"></script>
-<script src="scripts/map-layer.js?v=20260814-carto-16"></script>
+<script src="scripts/map-layer.js?v=20260819-vlp"></script>
 <script src="scripts/map-toolbar.js"></script>
+<script src="scripts/map-query.js"></script>
 <script src="scripts/map-interaction.js?v=20260814-carto-17"></script>
 <script src="scripts/cartography.js?v=20260814-carto-17"></script>
+<script src="scripts/legend-layer-create.js?v=20260819-1"></script>
 <script src="scripts/artifact-viewer.js"></script>
 <script src="scripts/statistics-renderer.js"></script>
 <script src="scripts/chat.js?v=20260814-carto-16"></script>
