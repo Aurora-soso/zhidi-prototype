@@ -512,7 +512,8 @@ chatBody.addEventListener('click',e=>{
 
 // ============ 对话区智能体信息栏 ============
 // 当前对话智能体（对话区信息栏展示对象）
-let currentAgent={id:'zhidi',name:'致地AI助手',icon:'🤖',cat:'平台默认',desc:'致地AI 空间智能体，提供空间分析、制图、数据查询与报告生成能力。',tools:25,kb:2};
+// 完整配置（提示词、可调度智能体等）由 agents.js 加载时与切换时补全
+let currentAgent={id:'zhidi',name:'致地AI助手',icon:'🤖',cat:'平台默认',desc:'致地AI 默认空间智能体（Buddy），直接处理基础 GIS 任务，并可调度数据处理、数据查询、制图、统计分析四大专业智能体。',tools:3,kb:2};
 $('#aibSwitchBtn').addEventListener('click',()=>{
   // 浮层打开时遮罩覆盖按钮，此处仅处理「打开」；再次点击按钮位置会命中遮罩 → 关闭（等效 toggle）
   if($('#asMask').classList.contains('show')) closeSwitchPopup();
@@ -617,10 +618,14 @@ renderQuickCommands(); renderQcTag();
 // ============ 切换智能体弹窗（双模块独立无限滚动） ============
 const SWITCH_PAGE = 6;
 // 弹窗专用数据源（与智能体中心相互独立）
-const switchData = {
-  mine:   buildSwitchAgents('mine', 19),   // 19 条 → 4 页（6+6+6+1）
-  square: buildSwitchAgents('square', 27), // 27 条 → 5 页（6+6+6+6+3）
-};
+// 延迟构建：需等待 agents.js（四大专业智能体真实配置）加载完成
+const switchData = { mine:null, square:null };
+function getSwitchData(module){
+  if(!switchData[module]){
+    switchData[module] = buildSwitchAgents(module, module==='mine' ? 23 : 27);
+  }
+  return switchData[module];
+}
 // 两个模块各自独立的分页状态
 const switchPageState = {
   mine:   { page:0, loading:false, hasMore:true },
@@ -633,9 +638,13 @@ function buildSwitchAgents(module, total){
   for(let i=1;i<=total;i++){
     if(module==='mine'){
       if(i===1){
-        arr.push({id:'zhidi',name:'致地AI助手',icon:'🤖',iconBg:'#E0F2FE',iconColor:'#0EA5E9',status:'published',cat:'平台默认',desc:'致地AI 空间智能体，提供空间分析、制图、数据查询与报告生成能力。',tools:25,kb:2});
+        arr.push({id:'zhidi',name:'致地AI助手',icon:'🤖',iconBg:'#E0F2FE',iconColor:'#0EA5E9',status:'published',cat:'平台默认',desc:'致地AI 默认空间智能体（Buddy），直接处理基础 GIS 任务，并可调度数据处理、数据查询、制图、统计分析四大专业智能体。',tools:3,kb:2});
+      }else if(i>=2 && i<=5 && typeof zhidiSpecialAgents!=='undefined'){
+        // 四大专业智能体（真实配置，切换后携带完整提示词）
+        const s=zhidiSpecialAgents[i-2];
+        arr.push({id:s.id,name:s.name,icon:s.icon,iconBg:s.iconBg,iconColor:s.iconColor,status:s.status,cat:s.cat,desc:s.desc,tools:s.tools,kb:s.kb});
       }else{
-        const n=i-1;
+        const n=i-5;
         arr.push({id:'m'+n,name:'我的智能体 '+n,icon:icons[n%icons.length],iconBg:'#ECFDF5',iconColor:'#10B981',status:(n%5===0?'draft':(n%7===0?'offline':'published')),cat:cats[n%cats.length],desc:'你配置的智能体「我的智能体 '+n+'」，内置空间分析工具与专属知识库。',tools:(n*3)%20,kb:(n*2)%12});
       }
     }else{
@@ -662,7 +671,7 @@ function loadSwitchMore(module){
   const foot = $('#asFoot'+cap);
   foot.innerHTML = '<span class="sw-loading"><span class="sw-spin"></span>加载中…</span>';
   setTimeout(()=>{
-    const data = switchData[module];
+    const data = getSwitchData(module);
     const start = st.page * SWITCH_PAGE;
     const slice = data.slice(start, start+SWITCH_PAGE);
     const list = $('#asList'+cap);
@@ -688,7 +697,7 @@ function markSwitchSelected(){
   });
 }
 function switchCurrentAgent(id, mod){
-  const a = switchData[mod].find(x=>x.id===id); if(!a) return;
+  const a = getSwitchData(mod).find(x=>x.id===id); if(!a) return;
   currentAgent = { id:a.id, name:a.name, icon:a.icon, cat:a.cat, desc:a.desc };
   // 确保编辑页所需结构，并为默认智能体初始化示例配置
   if(typeof ensureAgentEditState==='function') ensureAgentEditState();

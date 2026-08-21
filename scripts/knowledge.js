@@ -1,6 +1,5 @@
 // ============ 知识库管理 ============
 const kbCategories = [
-  {id:'new', icon:'➕', name:'新建主题', count:0, isNew:true},
   {id:'law', icon:'⚖️', name:'法律法规', count:12},
   {id:'doc', icon:'📄', name:'党中央国务院文件', count:8},
   {id:'equip', icon:'🏗️', name:'自然资源装备', count:5},

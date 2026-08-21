@@ -56,6 +56,12 @@
 - 包含“我的智能体”和“智能体广场”两个 Tab。
 - 支持搜索、分类筛选、详情、编辑、发布/下架、删除、试用和调用等原型交互。
 - 数据与卡片渲染集中在 `scripts/agents.js`。
+- 平台内置 5 个智能体（对齐立项方案 L1 基础功能层，提示词依据《致地AI客户端产品立项策划方案》编写）：
+  - 默认智能体「致地AI助手」（id `zhidi`，Buddy）：直接处理基础 GIS 任务，通过 `callableAgentIds` 调度四大专业智能体，完整定义在 `agents.js` 的 `defaultAgentDef`。
+  - 四大专业智能体（`zhidiSpecialAgents`，置顶于“我的智能体”）：数据处理（`zhidi-data`）、数据查询（`zhidi-query`）、制图（`zhidi-map`）、统计分析（`zhidi-stats`），每个均含 `prompt`（角色/能力/工作流/输出要求结构）、`atomToolNames`、`kbItems`、开场白与示例问题。
+- 当前智能体完整配置由 `currentAgent`（定义于 `chat.js`）承载：`agents.js` 加载时对默认智能体做完整升级，`initCurrentAgentConfig` 在切换时按 id 回填完整定义；工作台对话区切换弹窗（`chat.js` 的 `switchData`）延迟构建，首屏纳入默认智能体与四大专业智能体。
+- 智能体详情页在存在 `prompt` 时展示“系统提示词”卡片（`agents.css` 的 `.add-prompt`）。
+- 智能体编辑表单的 Prompt 模板下拉（`#aeePromptTemplate`）内置：通用空间智能体（buddy）、数据处理（dataproc）、数据查询（query）、智能制图（carto）、统计分析（stats）及原有审查/分析/报告/问答模板。
 
 ### 知识库管理
 
